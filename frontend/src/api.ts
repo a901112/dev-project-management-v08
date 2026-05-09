@@ -1,6 +1,6 @@
 import type { AppData, LoginResult } from './types';
 
-const defaultApiUrl = 'https://script.google.com/a/macros/asiasurge.com/s/AKfycbwZtncBGTvjtiplhFLjxXDP5PeR1fIs0IpyJpHqw3VuYbUJwp6HNcYias2eqEha8F8Q/exec';
+const defaultApiUrl = 'https://script.google.com/macros/s/AKfycbwZtncBGTvjtiplhFLjxXDP5PeR1fIs0IpyJpHqw3VuYbUJwp6HNcYias2eqEha8F8Q/exec';
 
 export const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || defaultApiUrl;
 
