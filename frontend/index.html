@@ -4,6 +4,59 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Project Management V0.8</title>
+    <style>
+      .project-list-grid {
+        grid-template-columns: 150px 320px 160px 110px 100px minmax(260px, 1fr) 112px 138px 112px !important;
+        min-width: 1362px !important;
+      }
+      .project-panel .tr.project-list-grid {
+        position: relative;
+      }
+      .project-panel .tr.project-list-grid:not(.th) > span:first-child .link-button {
+        font-size: 14px;
+        line-height: 1.28;
+        word-break: break-word;
+      }
+      .project-panel .tr.project-list-grid.th > span:nth-child(3) {
+        font-size: 0;
+      }
+      .project-panel .tr.project-list-grid.th > span:nth-child(3)::before {
+        content: "開案 / 預計";
+        font-size: 13px;
+      }
+      .project-panel .tr.project-list-grid:not(.th) > span:nth-child(3) {
+        padding-top: 12px;
+        line-height: 1.35;
+      }
+      .project-panel .tr.project-list-grid:not(.th) > span:nth-child(3)::before {
+        content: "開案日";
+        display: block;
+        margin-bottom: 2px;
+        color: #718096;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .project-panel .tr.project-list-grid:not(.th) > span:nth-child(5) small {
+        display: block !important;
+        position: absolute;
+        left: 480px;
+        top: 50px;
+        width: 145px;
+        margin: 0;
+        color: #718096;
+        font-size: 12px;
+        line-height: 1.35;
+        pointer-events: none;
+      }
+      .project-panel .tr.project-list-grid:not(.th) > span:nth-child(5) small::first-line {
+        font-weight: 700;
+      }
+      .project-panel .tr.project-list-grid:not(.th) > span:nth-child(9) .light {
+        min-height: 30px !important;
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
