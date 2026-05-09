@@ -33,8 +33,6 @@ jobs:
 
       - name: Build frontend
         working-directory: frontend
-        env:
-          VITE_APPS_SCRIPT_URL: ${{ secrets.VITE_APPS_SCRIPT_URL }}
         run: npm run build
 
       - name: Setup Pages
