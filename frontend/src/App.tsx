@@ -1,9 +1,9 @@
-import { FormEvent, ReactNode, useEffect, useState } from 'react';
-import { Bell, CheckCircle2, ClipboardList, FolderKanban, LogOut, Plus, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
+import { Bell, CheckCircle2, ClipboardList, Eye, FolderKanban, LogOut, Plus, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import { api } from './api';
 import type { AppData, Project, Task, User } from './types';
 
-type View = 'dashboard' | 'allTasks' | 'myTasks' | 'review' | 'projects' | 'users';
+type View = 'dashboard' | 'projects' | 'projectDetail' | 'allTasks' | 'myTasks' | 'review' | 'users';
 type ModalState =
   | { type: 'task'; project?: Project }
   | { type: 'project' }
@@ -21,28 +21,40 @@ type ProjectHealth = {
   tone: 'gray' | 'danger' | 'warn' | 'notice' | 'info' | 'ok' | 'idle';
 };
 
-const STATUS_IN_PROGRESS = '\u9032\u884c\u4e2d';
-const STATUS_RETURNED = '\u5df2\u9000\u56de';
-const STATUS_PENDING = '\u5f85\u8986\u5224';
-const STATUS_COMPLETED = '\u5df2\u5b8c\u6210';
-const STATUS_CLOSED = '\u5df2\u7d50\u6848';
-const STATUS_VOIDED = '\u4f5c\u5ee2';
-const STAGE_ORDER_CLOSED = '\u8a02\u55ae\u7d50\u6848';
-const RESULT_DONE = '\u5b8c\u6210';
-const TASK_TYPE_SUPPLIER_QUOTE = '\u4f9b\u61c9\u5546\u4f30\u50f9';
+type ProjectFiltersState = {
+  keyword: string;
+  status: string;
+  stage: string;
+  health: string;
+  owner: string;
+};
+
+const STATUS_IN_PROGRESS = '進行中';
+const STATUS_RETURNED = '已退回';
+const STATUS_PENDING = '待覆判';
+const STATUS_COMPLETED = '已完成';
+const STATUS_CLOSED = '已結案';
+const STATUS_VOIDED = '作廢';
+const STAGE_ORDER_CLOSED = '訂單結案';
+const RESULT_DONE = '完成';
+const TASK_TYPE_SUPPLIER_QUOTE = '供應商估價';
 
 const tokenKey = 'pm-v08-token';
 const userKey = 'pm-v08-user';
 const unfinishedStatuses = [STATUS_IN_PROGRESS, STATUS_RETURNED, STATUS_PENDING];
+const projectStatuses = [STATUS_IN_PROGRESS, '指定結案', STATUS_CLOSED, STATUS_VOIDED];
+const projectStages = ['評估中', '估價中', '打樣中', '客戶承認中', '量產中', STAGE_ORDER_CLOSED];
 
 const navItems: Array<{ view: View; label: string; icon: typeof FolderKanban }> = [
   { view: 'dashboard', label: '儀表板', icon: Bell },
+  { view: 'projects', label: '專案管理', icon: FolderKanban },
   { view: 'allTasks', label: '任務清單', icon: ClipboardList },
   { view: 'myTasks', label: '我的任務', icon: CheckCircle2 },
   { view: 'review', label: '待覆判', icon: ShieldCheck },
-  { view: 'projects', label: '專案管理', icon: FolderKanban },
   { view: 'users', label: '人員設定', icon: ShieldCheck }
 ];
+
+const emptyProjectFilters: ProjectFiltersState = { keyword: '', status: '', stage: '', health: '', owner: '' };
 
 export function App() {
   const [token, setToken] = useState(() => localStorage.getItem(tokenKey) || '');
@@ -52,6 +64,7 @@ export function App() {
   });
   const [data, setData] = useState<AppData | null>(null);
   const [view, setView] = useState<View>('dashboard');
+  const [selectedProjectId, setSelectedProjectId] = useState('');
   const [modal, setModal] = useState<ModalState>(null);
   const [error, setError] = useState('');
   const [keyword, setKeyword] = useState('');
@@ -83,6 +96,11 @@ export function App() {
     setData(null);
   }
 
+  function openProject(project: Project) {
+    setSelectedProjectId(project.ProjectId);
+    setView('projectDetail');
+  }
+
   if (!token || !user) {
     return <Login onLogin={(loginToken, loginUser) => {
       localStorage.setItem(tokenKey, loginToken);
@@ -100,6 +118,7 @@ export function App() {
   const allTasks = filterTasks(data.tasks, { keyword, statusFilter, assigneeFilter, projectFilter }, data);
   const myTasks = data.tasks.filter((task) => sameEmail(task.AssigneeEmail, user.Email) && unfinishedStatuses.includes(task.TaskStatus));
   const reviewTasks = data.tasks.filter((task) => task.TaskStatus === STATUS_PENDING && canReview(user, task));
+  const selectedProject = data.projects.find((project) => String(project.ProjectId) === String(selectedProjectId)) || data.projects[0];
 
   return (
     <Shell user={user} view={view} setView={setView} logout={logout} notificationCount={notifications.length}>
@@ -112,6 +131,8 @@ export function App() {
       </header>
       {error && <div className="content"><div className="error">{error}</div></div>}
       {view === 'dashboard' && <Dashboard data={data} user={user} notifications={notifications} setView={setView} />}
+      {view === 'projects' && <Projects data={data} setModal={setModal} openProject={openProject} />}
+      {view === 'projectDetail' && selectedProject && <ProjectDetail data={data} project={selectedProject} setModal={setModal} back={() => setView('projects')} />}
       {view === 'allTasks' && (
         <section className="content">
           <div className="section-heading">
@@ -146,7 +167,6 @@ export function App() {
           <TaskCards data={data} tasks={reviewTasks} user={user} mode="review" setModal={setModal} applyData={setData} token={token} />
         </section>
       )}
-      {view === 'projects' && <Projects data={data} setModal={setModal} />}
       {view === 'users' && <Users data={data} />}
       {modal && <ActionModal modal={modal} data={data} token={token} close={() => setModal(null)} applyData={setData} />}
     </Shell>
@@ -207,8 +227,9 @@ function Shell({ user, view, setView, logout, notificationCount = 0, children }:
         <nav>
           {navItems.map((item) => {
             const Icon = item.icon;
+            const active = view === item.view || (view === 'projectDetail' && item.view === 'projects');
             return (
-              <button key={item.view} className={view === item.view ? 'active' : ''} onClick={() => setView(item.view)}>
+              <button key={item.view} className={active ? 'active' : ''} onClick={() => setView(item.view)}>
                 <Icon size={18} />{item.label}
                 {item.view === 'dashboard' && notificationCount > 0 && <em className="nav-badge">{notificationCount}</em>}
               </button>
@@ -261,7 +282,7 @@ function TaskFilters(props: {
   setProjectFilter: (value: string) => void;
 }) {
   return (
-    <div className="filter-panel">
+    <div className="filter-panel task-filter-panel">
       <label><Search size={14} />關鍵字<input value={props.keyword} onChange={(event) => props.setKeyword(event.target.value)} placeholder="任務、專案、人員" /></label>
       <label>狀態
         <select value={props.statusFilter} onChange={(event) => props.setStatusFilter(event.target.value)}>
@@ -365,15 +386,17 @@ function HelpCards({ mode }: { mode: 'assignee' | 'review' }) {
   return <div className="help-grid">{cards.map((card) => <div className="help-card" key={card[0]}><strong>{card[0]}</strong><span>{card[1]}</span></div>)}</div>;
 }
 
-function Projects({ data, setModal }: { data: AppData; setModal: (modal: ModalState) => void }) {
-  const rows = data.projects.map((project) => {
-    const tasks = data.tasks.filter((task) => String(task.ProjectId) === String(project.ProjectId));
+function Projects({ data, setModal, openProject }: { data: AppData; setModal: (modal: ModalState) => void; openProject: (project: Project) => void }) {
+  const [filters, setFilters] = useState<ProjectFiltersState>(emptyProjectFilters);
+  const rows = useMemo(() => data.projects.map((project) => {
+    const tasks = projectTasks(data, project);
     const health = projectHealth(project, tasks);
     const plannedCloseDate = getProjectPlannedCloseDate(project, tasks);
     const openTasks = tasks.filter((task) => unfinishedStatuses.includes(task.TaskStatus));
     const overdueTasks = openTasks.filter((task) => isOverdue(task));
     return { project, tasks, health, plannedCloseDate, openTasks, overdueTasks };
-  });
+  }), [data]);
+  const filteredRows = rows.filter((row) => matchProjectFilters(row, filters, data));
   const activeCount = rows.filter((row) => !isProjectClosed(row.project)).length;
   const riskCount = rows.filter((row) => ['danger', 'warn'].includes(row.health.tone)).length;
   const idleCount = rows.filter((row) => row.health.tone === 'idle').length;
@@ -391,35 +414,133 @@ function Projects({ data, setModal }: { data: AppData; setModal: (modal: ModalSt
         <Metric label="閒置專案" value={idleCount} tone={idleCount ? 'warn' : ''} />
         <Metric label="狀態正常" value={okCount} tone="ok" />
       </div>
+      <ProjectFilters data={data} rows={rows} filters={filters} setFilters={setFilters} />
       <div className="project-panel table">
         <div className="tr th project-list-grid">
-          <span>專案代碼</span><span>專案名稱 / 專案品項</span><span>新增日期</span><span>進度</span><span>專案健康度</span><span>任務</span><span>訂單層</span><span>操作</span>
+          <span>專案代碼</span><span>專案名稱 / 專案品項</span><span>新增日期</span><span>負責人</span><span>進度</span><span>專案健康度</span><span>任務</span><span>訂單層</span><span>操作</span>
         </div>
-        {rows.map(({ project, tasks, health, plannedCloseDate, openTasks, overdueTasks }) => (
+        {filteredRows.map(({ project, tasks, health, plannedCloseDate, openTasks, overdueTasks }) => (
           <div className="tr project-list-grid" key={project.ProjectId}>
-            <span><strong>{project.ProjectCode}</strong><small>{project.Status || '-'}</small></span>
+            <span><button className="link-button" onClick={() => openProject(project)}>{project.ProjectCode}</button><small>{project.Status || '-'}</small></span>
             <span>
-              <strong>{project.ProjectName}</strong>
+              <button className="project-name-button" onClick={() => openProject(project)}>{project.ProjectName}</button>
               <small>{renderItemChips(project.ItemCodes)}</small>
             </span>
             <span>{formatDateOnly(project.CreatedAt) || '-'}</span>
+            <span>{displayUser(data, project.OwnerEmail)}</span>
             <span><Status status={project.Stage || '-'} /><small>預計結案：{plannedCloseDate || '-'}</small></span>
             <span>
               <span className="health-title"><em className={`health-badge ${health.tone}`}>{health.label}</em><strong>{health.title}</strong></span>
               <small className="health-copy">{health.description}</small>
             </span>
-            <span>
-              共 {tasks.length} 件
-              <small>未完成 {openTasks.length} 件{overdueTasks.length ? ` / 逾期 ${overdueTasks.length} 件` : ''}</small>
-            </span>
+            <span>共 {tasks.length} 件<small>未完成 {openTasks.length} 件{overdueTasks.length ? ` / 逾期 ${overdueTasks.length} 件` : ''}</small></span>
             <span className="order-placeholder">待串接 ERP<small>訂單 / 客戶 / 出貨狀態</small></span>
-            <span><button className="light" onClick={() => setModal({ type: 'task', project })}>新增任務</button></span>
+            <span className="row-actions"><button className="light" onClick={() => openProject(project)}><Eye size={15} />內頁</button><button className="light" onClick={() => setModal({ type: 'task', project })}>新增任務</button></span>
           </div>
         ))}
-        {rows.length === 0 && <div className="empty">目前沒有專案。</div>}
+        {filteredRows.length === 0 && <div className="empty">沒有符合條件的專案。</div>}
       </div>
     </section>
   );
+}
+
+function ProjectFilters({ data, rows, filters, setFilters }: { data: AppData; rows: Array<{ project: Project; health: ProjectHealth }>; filters: ProjectFiltersState; setFilters: (filters: ProjectFiltersState) => void }) {
+  const healthOptions = Array.from(new Map(rows.map((row) => [row.health.label, row.health])).values());
+  function update(key: keyof ProjectFiltersState, value: string) {
+    setFilters({ ...filters, [key]: value });
+  }
+  return (
+    <div className="filter-panel project-filter-panel">
+      <label><Search size={14} />關鍵字<input value={filters.keyword} onChange={(event) => update('keyword', event.target.value)} placeholder="專案名稱 / 代碼 / 品號 / 負責人" /></label>
+      <label>專案狀態<select value={filters.status} onChange={(event) => update('status', event.target.value)}><option value="">全部</option>{projectStatuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
+      <label>主階段<select value={filters.stage} onChange={(event) => update('stage', event.target.value)}><option value="">全部</option>{projectStages.map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></label>
+      <label>健康度<select value={filters.health} onChange={(event) => update('health', event.target.value)}><option value="">全部</option>{healthOptions.map((health) => <option key={health.label} value={health.label}>{health.label}</option>)}</select></label>
+      <label>負責人<select value={filters.owner} onChange={(event) => update('owner', event.target.value)}><option value="">全部</option>{data.users.map((user) => <option key={user.Email} value={user.Email}>{user.DisplayName}</option>)}</select></label>
+      <button className="light filter-reset" onClick={() => setFilters(emptyProjectFilters)}>清除篩選</button>
+    </div>
+  );
+}
+
+function ProjectDetail({ data, project, setModal, back }: { data: AppData; project: Project; setModal: (modal: ModalState) => void; back: () => void }) {
+  const tasks = projectTasks(data, project);
+  const health = projectHealth(project, tasks);
+  const plannedCloseDate = getProjectPlannedCloseDate(project, tasks);
+  const openTasks = tasks.filter((task) => unfinishedStatuses.includes(task.TaskStatus));
+  const overdueTasks = openTasks.filter((task) => isOverdue(task));
+  const items = splitItemCodes(project.ItemCodes);
+
+  return (
+    <section className="content project-detail-page">
+      <div className="section-heading">
+        <div>
+          <button className="text-back" onClick={back}>← 回專案清單</button>
+          <h2>{project.ProjectCode} / {project.ProjectName}</h2>
+        </div>
+        <div className="actions">
+          <button className="light" onClick={() => setModal({ type: 'task', project })}><Plus size={16} />新增任務</button>
+          <button className="bad">結案 / 強制結案</button>
+        </div>
+      </div>
+
+      <div className="detail-grid">
+        <section className="detail-panel project-main-panel">
+          <div className="detail-title-row"><h3>專案主檔</h3><em className={`health-badge ${health.tone}`}>{health.label}</em></div>
+          <div className="field-grid">
+            <Info label="專案主階段" value={<Status status={project.Stage || '-'} />} />
+            <Info label="專案狀態" value={project.Status || '-'} />
+            <Info label="專案負責人" value={displayUser(data, project.OwnerEmail)} />
+            <Info label="新增日期" value={formatDateOnly(project.CreatedAt) || '-'} />
+            <Info label="預計結案日" value={plannedCloseDate || '-'} />
+            <Info label="關聯客戶" value="目前由 ERP 訂單層帶出" />
+          </div>
+          <div className="note-box">專案主階段是內部摘要，不代表每一個品號或每一個客戶都已經走到同一進度。細部差異放在下方品號 / 客戶 / 訂單層。</div>
+        </section>
+
+        <section className="detail-panel">
+          <h3>專案摘要判斷</h3>
+          <div className="status-box">
+            <strong>{health.title}</strong>
+            <span>{health.description}</span>
+          </div>
+          <div className="field-grid compact">
+            <Info label="全部任務" value={`${tasks.length} 件`} />
+            <Info label="未完成任務" value={`${openTasks.length} 件`} />
+            <Info label="逾期任務" value={`${overdueTasks.length} 件`} />
+            <Info label="專案品項" value={`${items.length} 個`} />
+          </div>
+        </section>
+      </div>
+
+      <section className="detail-panel full-width">
+        <h3>專案主階段</h3>
+        <div className="stage-track">{projectStages.map((stage) => <span key={stage} className={project.Stage === stage ? 'active' : ''}>{stage.replace('中', '')}</span>)}</div>
+      </section>
+
+      <section className="detail-panel full-width">
+        <div className="section-heading in-panel"><h3>專案品項</h3><span className="muted">品號是專案和 ERP 的橋，未來由這裡串訂單、客戶、預交日與交貨狀態。</span></div>
+        <div className="item-row">{renderItemChips(project.ItemCodes)}</div>
+      </section>
+
+      <section className="detail-panel full-width">
+        <h3>細項進度：品號 / 客戶 / 訂單層</h3>
+        <div className="table detail-table">
+          <div className="tr th order-grid"><span>品號</span><span>客戶</span><span>訂單</span><span>訂單數量</span><span>已交數量</span><span>預交日</span><span>細項狀態</span><span>目前說明</span></div>
+          {(items.length ? items : ['尚未加入品號']).map((item) => (
+            <div className="tr order-grid" key={item}><span>{item}</span><span>待串接</span><span>待串接 ERP</span><span>-</span><span>-</span><span>-</span><span><Status status="待查詢" /></span><span>V0.8 先保留訂單層位置，後續接 COPTC / COPTD 後自動帶出。</span></div>
+          ))}
+        </div>
+      </section>
+
+      <section className="detail-panel full-width">
+        <div className="section-heading in-panel"><h3>任務清單</h3><button className="light" onClick={() => setModal({ type: 'task', project })}>新增任務</button></div>
+        <TaskTable data={data} tasks={tasks} user={data.currentUser} setModal={setModal} />
+      </section>
+    </section>
+  );
+}
+
+function Info({ label, value }: { label: string; value: ReactNode }) {
+  return <div className="info-cell"><span>{label}</span><strong>{value}</strong></div>;
 }
 
 function renderItemChips(itemCodes: string) {
@@ -430,6 +551,22 @@ function renderItemChips(itemCodes: string) {
 
 function splitItemCodes(value: string) {
   return String(value || '').split(/[\/、,，\s]+/).map((item) => item.trim()).filter(Boolean);
+}
+
+function matchProjectFilters(row: { project: Project; health: ProjectHealth }, filters: ProjectFiltersState, data: AppData) {
+  const keyword = filters.keyword.trim().toLowerCase();
+  if (filters.status && row.project.Status !== filters.status) return false;
+  if (filters.stage && row.project.Stage !== filters.stage) return false;
+  if (filters.health && row.health.label !== filters.health) return false;
+  if (filters.owner && !sameEmail(row.project.OwnerEmail, filters.owner)) return false;
+  if (!keyword) return true;
+  const ownerName = displayUser(data, row.project.OwnerEmail);
+  return [row.project.ProjectCode, row.project.ProjectName, row.project.ItemCodes, row.project.Status, row.project.Stage, ownerName, row.health.label, row.health.title]
+    .some((value) => String(value || '').toLowerCase().includes(keyword));
+}
+
+function projectTasks(data: AppData, project: Project) {
+  return data.tasks.filter((task) => String(task.ProjectId) === String(project.ProjectId) || task.ProjectCode === project.ProjectCode);
 }
 
 function projectHealth(project: Project, tasks: Task[]): ProjectHealth {
@@ -498,19 +635,31 @@ function Users({ data }: { data: AppData }) {
 }
 
 function ActionModal({ modal, data, token, close, applyData }: { modal: Exclude<ModalState, null>; data: AppData; token: string; close: () => void; applyData: (data: AppData) => void }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
-    let next: AppData;
-    if (modal.type === 'project') next = await api.createProject(token, payload);
-    else if (modal.type === 'task') next = await api.createTask(token, { ...payload, ProjectId: payload.ProjectId || modal.project?.ProjectId });
-    else if (modal.type === 'result') next = await api.submitTaskResult(token, { ...payload, TaskId: modal.task.TaskId, Action: modal.action });
-    else if (modal.type === 'review') next = await api.reviewTask(token, { ...payload, TaskId: modal.task.TaskId, Action: modal.action });
-    else if (modal.type === 'followUp') next = await api.createFollowUpTask(token, { ...payload, SourceTaskId: modal.task.TaskId });
-    else if (modal.type === 'edit') next = await api.editTask(token, { ...payload, TaskId: modal.task.TaskId });
-    else next = await api.voidTask(token, { ...payload, TaskId: modal.task.TaskId });
-    applyData(next);
-    close();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+      let next: AppData;
+      if (modal.type === 'project') next = await api.createProject(token, payload);
+      else if (modal.type === 'task') next = await api.createTask(token, { ...payload, ProjectId: payload.ProjectId || modal.project?.ProjectId });
+      else if (modal.type === 'result') next = await api.submitTaskResult(token, { ...payload, TaskId: modal.task.TaskId, Action: modal.action });
+      else if (modal.type === 'review') next = await api.reviewTask(token, { ...payload, TaskId: modal.task.TaskId, Action: modal.action });
+      else if (modal.type === 'followUp') next = await api.createFollowUpTask(token, { ...payload, SourceTaskId: modal.task.TaskId });
+      else if (modal.type === 'edit') next = await api.editTask(token, { ...payload, TaskId: modal.task.TaskId });
+      else next = await api.voidTask(token, { ...payload, TaskId: modal.task.TaskId });
+      applyData(next);
+      close();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -518,36 +667,37 @@ function ActionModal({ modal, data, token, close, applyData }: { modal: Exclude<
       <section className="modal">
         <div className="modal-head"><h3>{modalTitle(modal)}</h3><button className="light" onClick={close}>關閉</button></div>
         <form className="form-grid" onSubmit={handleSubmit}>
-          {modal.type === 'project' && <ProjectFields />}
+          {modal.type === 'project' && <ProjectFields data={data} />}
           {modal.type === 'task' && <TaskFields data={data} project={modal.project} />}
           {modal.type === 'edit' && <TaskFields data={data} task={modal.task} />}
           {modal.type === 'followUp' && <TaskFields data={data} sourceTask={modal.task} title={`${modal.task.ResultReason || '任務異常'}，後續處理：${modal.task.TaskName}`} />}
           {modal.type === 'void' && <label>作廢原因<input name="ResultReason" required /></label>}
           {modal.type === 'result' && modal.action !== 'complete' && <label>原因<input name="ResultReason" required /></label>}
           {(modal.type === 'result' || modal.type === 'review') && <label>備註<textarea name="Comment" required /></label>}
-          <button className="primary">送出</button>
+          {error && <div className="error">{error}</div>}
+          <button className="primary" disabled={isSubmitting}>{isSubmitting ? '送出中...' : '送出'}</button>
         </form>
       </section>
     </div>
   );
 }
 
-function ProjectFields() {
-  const stages = [
-    ['\u8a55\u4f30\u4e2d', '評估中'],
-    ['\u4f30\u50f9\u4e2d', '估價中'],
-    ['\u6253\u6a23\u4e2d', '打樣中'],
-    ['\u5ba2\u6236\u627f\u8a8d\u4e2d', '客戶承認中'],
-    ['\u91cf\u7522\u4e2d', '量產中'],
-    ['\u8a02\u55ae\u7d50\u6848', '訂單結案']
-  ];
+function ProjectFields({ data }: { data: AppData }) {
   return (
-    <>
+    <div className="project-form-grid">
       <label>專案代碼<input name="ProjectCode" placeholder="空白時系統自動產生" /></label>
       <label>專案名稱<input name="ProjectName" required /></label>
-      <label>品項代碼<input name="ItemCodes" placeholder="多個品項請用 / 分隔" /></label>
-      <label>進度<select name="Stage">{stages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-    </>
+      <label>專案品項<input name="ItemCodes" placeholder="多個品號請用 / 分隔，例如 25000/25006" /></label>
+      <label>專案負責人<select name="OwnerEmail" defaultValue={data.currentUser.Email}>{data.users.map((user) => <option key={user.Email} value={user.Email}>{user.DisplayName} / {user.Role}</option>)}</select></label>
+      <label>進度<select name="Stage">{projectStages.map((stage) => <option key={stage} value={stage}>{stage}</option>)}</select></label>
+      <label>狀態<select name="Status">{projectStatuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
+      <label>新增專案日期<input type="date" name="CreatedDate" /></label>
+      <label>預計結案日<input type="date" name="PlannedCloseDate" /></label>
+      <label>策略 / 專案類型<select name="ProjectStrategy"><option>標準開發</option><option>湊量開發</option><option>替代料開發</option><option>客戶指定開發</option><option>內部評估</option></select></label>
+      <label>優先度<select name="Priority"><option>一般</option><option>高</option><option>低</option></select></label>
+      <label className="wide-field">專案說明<textarea name="Description" placeholder="開案原因、客戶需求、注意事項" /></label>
+      <label className="wide-field">備註<textarea name="Remark" placeholder="暫存補充資訊，之後可再整理欄位" /></label>
+    </div>
   );
 }
 
@@ -632,7 +782,7 @@ function projectName(data: AppData, projectId: string) {
 
 function displayUser(data: AppData, email: string) {
   const user = data.users.find((item) => sameEmail(item.Email, email));
-  return user ? user.DisplayName : email;
+  return user ? user.DisplayName : email || '-';
 }
 
 function sameEmail(a: string, b: string) {
