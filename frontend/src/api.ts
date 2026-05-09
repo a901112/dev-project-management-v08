@@ -5,6 +5,7 @@ const defaultApiUrl = 'https://script.google.com/macros/s/AKfycbwZtncBGTvjtiplhF
 export const appsScriptUrl = import.meta.env.VITE_APPS_SCRIPT_URL || defaultApiUrl;
 
 let callbackSeq = 0;
+const pendingCreateTaskRequests = new Map<string, Promise<AppData>>();
 
 type ApiResponse<T> = {
   ok: boolean;
@@ -52,10 +53,32 @@ function jsonp<T>(action: string, payload: Record<string, unknown> = {}): Promis
   });
 }
 
+function createTask(token: string, payload: Record<string, unknown>) {
+  const requestPayload = { ...payload, ActorEmail: token };
+  const key = [
+    token,
+    requestPayload.ProjectId,
+    requestPayload.ProjectCode,
+    requestPayload.TaskType,
+    requestPayload.TaskName,
+    requestPayload.AssigneeEmail,
+    requestPayload.DueDate
+  ].map((value) => String(value ?? '').trim().toLowerCase()).join('|');
+
+  const pending = pendingCreateTaskRequests.get(key);
+  if (pending) return pending;
+
+  const request = jsonp<AppData>('createTask', requestPayload).finally(() => {
+    pendingCreateTaskRequests.delete(key);
+  });
+  pendingCreateTaskRequests.set(key, request);
+  return request;
+}
+
 export const api = {
   login: (account: string, password: string) => jsonp<LoginResult>('login', { Account: account, Password: password }),
   getAppData: (token: string) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token }),
-  createTask: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('createTask', { ...payload, ActorEmail: token }),
+  createTask,
   createProject: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('createProject', { ...payload, ActorEmail: token }),
   submitTaskResult: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('submitTaskResult', { ...payload, ActorEmail: token }),
   reviewTask: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('reviewTask', { ...payload, ActorEmail: token }),
