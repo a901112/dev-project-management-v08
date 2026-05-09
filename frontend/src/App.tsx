@@ -28,12 +28,12 @@ const userKey = 'pm-v08-user';
 const unfinishedStatuses = [STATUS_IN_PROGRESS, STATUS_RETURNED, STATUS_PENDING];
 
 const navItems: Array<{ view: View; label: string; icon: typeof FolderKanban }> = [
-  { view: 'dashboard', label: 'Dashboard', icon: Bell },
-  { view: 'allTasks', label: 'Task List', icon: ClipboardList },
-  { view: 'myTasks', label: 'My Tasks', icon: CheckCircle2 },
-  { view: 'review', label: 'Review', icon: ShieldCheck },
-  { view: 'projects', label: 'Projects', icon: FolderKanban },
-  { view: 'users', label: 'Users', icon: ShieldCheck }
+  { view: 'dashboard', label: '儀表板', icon: Bell },
+  { view: 'allTasks', label: '任務清單', icon: ClipboardList },
+  { view: 'myTasks', label: '我的任務', icon: CheckCircle2 },
+  { view: 'review', label: '待覆判', icon: ShieldCheck },
+  { view: 'projects', label: '專案管理', icon: FolderKanban },
+  { view: 'users', label: '人員設定', icon: ShieldCheck }
 ];
 
 export function App() {
@@ -85,7 +85,7 @@ export function App() {
   }
 
   if (!data) {
-    return <Shell user={user} view={view} setView={setView} logout={logout}><section className="content">Loading...</section></Shell>;
+    return <Shell user={user} view={view} setView={setView} logout={logout}><section className="content">載入中...</section></Shell>;
   }
 
   const notifications = getNotifications(data, user);
@@ -100,15 +100,15 @@ export function App() {
           <strong>{user.DisplayName}</strong>
           <span>{user.Role} / {user.Email}</span>
         </div>
-        <button className="light" onClick={refresh}><RefreshCw size={16} />Refresh</button>
+        <button className="light" onClick={refresh}><RefreshCw size={16} />重新整理</button>
       </header>
       {error && <div className="content"><div className="error">{error}</div></div>}
       {view === 'dashboard' && <Dashboard data={data} user={user} notifications={notifications} setView={setView} />}
       {view === 'allTasks' && (
         <section className="content">
           <div className="section-heading">
-            <h2>Task List</h2>
-            <button className="primary" onClick={() => setModal({ type: 'task' })}><Plus size={16} />New Task</button>
+            <h2>任務清單</h2>
+            <button className="primary" onClick={() => setModal({ type: 'task' })}><Plus size={16} />新增任務</button>
           </div>
           <TaskFilters
             data={data}
@@ -126,14 +126,14 @@ export function App() {
       )}
       {view === 'myTasks' && (
         <section className="content">
-          <h2>My Tasks</h2>
+          <h2>我的任務</h2>
           <HelpCards mode="assignee" />
           <TaskCards data={data} tasks={myTasks} user={user} mode="assignee" setModal={setModal} applyData={setData} token={token} />
         </section>
       )}
       {view === 'review' && (
         <section className="content">
-          <h2>Review Queue</h2>
+          <h2>待覆判任務</h2>
           <HelpCards mode="review" />
           <TaskCards data={data} tasks={reviewTasks} user={user} mode="review" setModal={setModal} applyData={setData} token={token} />
         </section>
@@ -167,15 +167,15 @@ function Login({ onLogin }: { onLogin: (token: string, user: User) => void }) {
         <div className="login-title">
           <FolderKanban size={34} />
           <div>
-            <h1>Project Management</h1>
-            <p>V0.8 trial operation</p>
+            <h1>開發專案管理</h1>
+            <p>V0.8 試用版</p>
           </div>
         </div>
-        <label>Account<input value={account} onChange={(event) => setAccount(event.target.value)} autoFocus /></label>
-        <label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
+        <label>帳號<input value={account} onChange={(event) => setAccount(event.target.value)} autoFocus /></label>
+        <label>密碼<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
         {error && <div className="error">{error}</div>}
-        <button className="primary">Login</button>
-        <p className="muted">Trial accounts are maintained in the Users sheet.</p>
+        <button className="primary">登入</button>
+        <p className="muted">測試帳號維護於 Google Sheet 的 Users 分頁。</p>
       </form>
     </main>
   );
@@ -194,7 +194,7 @@ function Shell({ user, view, setView, logout, notificationCount = 0, children }:
       <aside className="sidebar">
         <div className="brand">
           <FolderKanban size={26} />
-          <div><strong>Project System</strong><span>V0.8</span></div>
+          <div><strong>專案任務系統</strong><span>V0.8</span></div>
         </div>
         <nav>
           {navItems.map((item) => {
@@ -211,7 +211,7 @@ function Shell({ user, view, setView, logout, notificationCount = 0, children }:
           <strong>{user.DisplayName}</strong>
           <span>{user.Role}</span>
         </div>
-        <button className="logout" onClick={logout}><LogOut size={18} />Logout</button>
+        <button className="logout" onClick={logout}><LogOut size={18} />登出</button>
       </aside>
       <main>{children}</main>
     </div>
@@ -225,16 +225,16 @@ function Dashboard({ data, user, notifications, setView }: { data: AppData; user
 
   return (
     <section className="content">
-      <h2>Dashboard</h2>
+      <h2>儀表板</h2>
       <div className="metric-grid">
-        <Metric label="My Open Tasks" value={myOpen.length} />
-        <Metric label="Pending Review" value={pendingReview.length} />
-        <Metric label="Overdue" value={overdue.length} tone={overdue.length ? 'bad' : ''} />
-        <Metric label="Alerts" value={notifications.length} tone={notifications.length ? 'warn' : ''} />
+        <Metric label="我的未完成任務" value={myOpen.length} />
+        <Metric label="待覆判任務" value={pendingReview.length} />
+        <Metric label="逾期任務" value={overdue.length} tone={overdue.length ? 'bad' : ''} />
+        <Metric label="登入提醒" value={notifications.length} tone={notifications.length ? 'warn' : ''} />
       </div>
       <div className="section-heading">
-        <h3><Bell size={18} />Login Alerts</h3>
-        <button className="light" onClick={() => setView('allTasks')}>Open Task List</button>
+        <h3><Bell size={18} />登入提醒</h3>
+        <button className="light" onClick={() => setView('allTasks')}>開啟任務清單</button>
       </div>
       <TaskTable data={data} tasks={notifications.slice(0, 8)} user={user} compact />
     </section>
@@ -254,27 +254,27 @@ function TaskFilters(props: {
 }) {
   return (
     <div className="filter-panel">
-      <label><Search size={14} />Keyword<input value={props.keyword} onChange={(event) => props.setKeyword(event.target.value)} placeholder="Task, project, user" /></label>
-      <label>Status
+      <label><Search size={14} />關鍵字<input value={props.keyword} onChange={(event) => props.setKeyword(event.target.value)} placeholder="任務、專案、人員" /></label>
+      <label>狀態
         <select value={props.statusFilter} onChange={(event) => props.setStatusFilter(event.target.value)}>
-          <option value="unfinished">Unfinished</option>
-          <option value="all">All</option>
-          <option value={STATUS_IN_PROGRESS}>In progress</option>
-          <option value={STATUS_PENDING}>Pending review</option>
-          <option value={STATUS_RETURNED}>Returned</option>
-          <option value={STATUS_COMPLETED}>Completed</option>
-          <option value="closed">Closed / Voided</option>
+          <option value="unfinished">未完成</option>
+          <option value="all">全部</option>
+          <option value={STATUS_IN_PROGRESS}>進行中</option>
+          <option value={STATUS_PENDING}>待覆判</option>
+          <option value={STATUS_RETURNED}>已退回</option>
+          <option value={STATUS_COMPLETED}>已完成</option>
+          <option value="closed">已結案 / 作廢</option>
         </select>
       </label>
-      <label>Assignee
+      <label>承辦人
         <select value={props.assigneeFilter} onChange={(event) => props.setAssigneeFilter(event.target.value)}>
-          <option value="">All</option>
+          <option value="">全部</option>
           {props.data.users.map((user) => <option key={user.Email} value={user.Email}>{user.DisplayName}</option>)}
         </select>
       </label>
-      <label>Project
+      <label>專案
         <select value={props.projectFilter} onChange={(event) => props.setProjectFilter(event.target.value)}>
-          <option value="">All</option>
+          <option value="">全部</option>
           {props.data.projects.map((project) => <option key={project.ProjectId} value={project.ProjectCode}>{project.ProjectCode}</option>)}
         </select>
       </label>
@@ -286,25 +286,25 @@ function TaskTable({ data, tasks, user, setModal, compact = false }: { data: App
   return (
     <div className="table">
       <div className={compact ? 'tr th compact-task-grid' : 'tr th task-grid'}>
-        <span>Task</span><span>Project</span><span>People</span><span>Status</span><span>Due</span>{!compact && <span>Actions</span>}
+        <span>任務</span><span>專案</span><span>人員</span><span>狀態</span><span>預計結案</span>{!compact && <span>操作</span>}
       </div>
       {tasks.map((task) => (
         <div className={compact ? 'tr compact-task-grid' : 'tr task-grid'} key={task.TaskId}>
           <span><strong>{task.TaskCode}</strong><small>{task.TaskType} / {task.TaskName}</small></span>
           <span>{task.ProjectCode}<small>{projectName(data, task.ProjectId)}</small></span>
-          <span>By: {displayUser(data, task.AssignedByEmail)}<small>To: {displayUser(data, task.AssigneeEmail)}</small></span>
+          <span>交辦：{displayUser(data, task.AssignedByEmail)}<small>承辦：{displayUser(data, task.AssigneeEmail)}</small></span>
           <span><Status status={task.TaskStatus} /><small>{task.TaskResult}{task.ResultReason ? ` / ${task.ResultReason}` : ''}</small></span>
-          <span>{task.DueDate || '-'}{isOverdue(task) && <small className="danger-text">Overdue</small>}</span>
+          <span>{task.DueDate || '-'}{isOverdue(task) && <small className="danger-text">已逾期</small>}</span>
           {!compact && <span className="row-actions">{setModal && actionButtons(task, user, setModal)}</span>}
         </div>
       ))}
-      {tasks.length === 0 && <div className="empty">No matching tasks.</div>}
+      {tasks.length === 0 && <div className="empty">沒有符合條件的任務。</div>}
     </div>
   );
 }
 
 function TaskCards({ data, tasks, user, mode, setModal, applyData, token }: { data: AppData; tasks: Task[]; user: User; mode: 'assignee' | 'review'; setModal: (modal: ModalState) => void; applyData: (data: AppData) => void; token: string }) {
-  if (tasks.length === 0) return <div className="empty-card">No tasks.</div>;
+  if (tasks.length === 0) return <div className="empty-card">目前沒有任務。</div>;
   return (
     <div className="task-list">
       {tasks.map((task) => (
@@ -313,26 +313,26 @@ function TaskCards({ data, tasks, user, mode, setModal, applyData, token }: { da
             <div className="task-title-line"><strong>{task.TaskName}</strong><Status status={task.TaskStatus} /></div>
             <span>{task.TaskCode} / {task.ProjectCode} / {task.TaskType}</span>
             <div className="task-fields">
-              <span>By: {displayUser(data, task.AssignedByEmail)}</span>
-              <span>To: {displayUser(data, task.AssigneeEmail)}</span>
-              <span>Due: {task.DueDate || '-'}</span>
-              <span>Result: {task.TaskResult}{task.ResultReason ? ` / ${task.ResultReason}` : ''}</span>
+              <span>交辦人：{displayUser(data, task.AssignedByEmail)}</span>
+              <span>承辦人：{displayUser(data, task.AssigneeEmail)}</span>
+              <span>預計結案日：{task.DueDate || '-'}</span>
+              <span>回報結果：{task.TaskResult}{task.ResultReason ? ` / ${task.ResultReason}` : ''}</span>
             </div>
           </div>
           <div className="actions">
             {mode === 'assignee' && [STATUS_IN_PROGRESS, STATUS_RETURNED].includes(task.TaskStatus) && (
               <>
-                <button className="ok" onClick={() => setModal({ type: 'result', task, action: 'complete' })}>Submit Done</button>
-                <button className="warn" onClick={() => setModal({ type: 'result', task, action: 'rejected' })}>Report Rejected</button>
-                <button className="bad" onClick={() => setModal({ type: 'result', task, action: 'blocked' })}>Report Blocked</button>
+                <button className="ok" onClick={() => setModal({ type: 'result', task, action: 'complete' })}>回報完成</button>
+                <button className="warn" onClick={() => setModal({ type: 'result', task, action: 'rejected' })}>回報未通過</button>
+                <button className="bad" onClick={() => setModal({ type: 'result', task, action: 'blocked' })}>回報異常</button>
               </>
             )}
             {mode === 'review' && task.TaskStatus === STATUS_PENDING && (
               <>
-                {task.TaskResult === RESULT_DONE && <button className="ok" onClick={async () => applyData(await api.reviewTask(token, { TaskId: task.TaskId, Action: 'approve', Comment: 'Approved by PM' }))}>Approve</button>}
-                <button className="warn" onClick={() => setModal({ type: 'review', task, action: 'return' })}>Return</button>
-                {task.TaskResult !== RESULT_DONE && <button className="bad" onClick={() => setModal({ type: 'review', task, action: 'close' })}>Close</button>}
-                {task.TaskResult !== RESULT_DONE && <button className="branch" onClick={() => setModal({ type: 'followUp', task })}>Follow-up</button>}
+                {task.TaskResult === RESULT_DONE && <button className="ok" onClick={async () => applyData(await api.reviewTask(token, { TaskId: task.TaskId, Action: 'approve', Comment: 'PM 覆判完成' }))}>覆判完成</button>}
+                <button className="warn" onClick={() => setModal({ type: 'review', task, action: 'return' })}>退回補充</button>
+                {task.TaskResult !== RESULT_DONE && <button className="bad" onClick={() => setModal({ type: 'review', task, action: 'close' })}>結案</button>}
+                {task.TaskResult !== RESULT_DONE && <button className="branch" onClick={() => setModal({ type: 'followUp', task })}>建立後續任務</button>}
               </>
             )}
           </div>
@@ -345,14 +345,14 @@ function TaskCards({ data, tasks, user, mode, setModal, applyData, token }: { da
 function HelpCards({ mode }: { mode: 'assignee' | 'review' }) {
   const cards = mode === 'assignee'
     ? [
-        ['Submit Done', 'The task goal has been reached and will be sent to PM review.'],
-        ['Report Rejected', 'The work has a result, but customer/supplier/internal review did not accept it.'],
-        ['Report Blocked', 'The task cannot proceed because required conditions or information are missing.']
+        ['回報完成', '任務目標已達成，送交交辦人覆判。'],
+        ['回報未通過', '已有執行結果，但客戶、供應商或內部評估未接受。'],
+        ['回報異常', '任務因資料、條件或外部因素不足，暫時無法繼續。']
       ]
     : [
-        ['Approve', 'PM confirms the result and marks the task completed.'],
-        ['Return', 'PM asks the assignee to add information or redo the task.'],
-        ['Follow-up', 'Create the next task while closing the current one.']
+        ['覆判完成', '交辦人確認結果，任務正式完成。'],
+        ['退回補充', '資料不足或需要修正，退回承辦人補充。'],
+        ['建立後續任務', '關閉目前任務，同時建立下一個處理任務。']
       ];
   return <div className="help-grid">{cards.map((card) => <div className="help-card" key={card[0]}><strong>{card[0]}</strong><span>{card[1]}</span></div>)}</div>;
 }
@@ -360,14 +360,14 @@ function HelpCards({ mode }: { mode: 'assignee' | 'review' }) {
 function Projects({ data, setModal }: { data: AppData; setModal: (modal: ModalState) => void }) {
   return (
     <section className="content">
-      <div className="section-heading"><h2>Projects</h2><button className="primary" onClick={() => setModal({ type: 'project' })}><Plus size={16} />New Project</button></div>
+      <div className="section-heading"><h2>專案管理</h2><button className="primary" onClick={() => setModal({ type: 'project' })}><Plus size={16} />新增專案</button></div>
       <div className="project-grid">
         {data.projects.map((project) => (
           <article className="project-card" key={project.ProjectId}>
             <strong>{project.ProjectCode}</strong>
             <span>{project.ProjectName}</span>
-            <small>{project.ItemCodes || 'No items'} / {project.Stage}</small>
-            <button className="light" onClick={() => setModal({ type: 'task', project })}>New Task</button>
+            <small>{project.ItemCodes || '無品項'} / {project.Stage}</small>
+            <button className="light" onClick={() => setModal({ type: 'task', project })}>新增任務</button>
           </article>
         ))}
       </div>
@@ -378,9 +378,9 @@ function Projects({ data, setModal }: { data: AppData; setModal: (modal: ModalSt
 function Users({ data }: { data: AppData }) {
   return (
     <section className="content">
-      <h2>Users</h2>
+      <h2>人員設定</h2>
       <div className="table">
-        <div className="tr th user-grid"><span>Account</span><span>Name</span><span>Role</span><span>Email</span></div>
+        <div className="tr th user-grid"><span>帳號</span><span>姓名</span><span>角色</span><span>Email</span></div>
         {data.users.map((user) => <div className="tr user-grid" key={user.Email}><span>{user.Account || '-'}</span><span>{user.DisplayName}</span><span>{user.Role}</span><span>{user.Email}</span></div>)}
       </div>
     </section>
@@ -406,16 +406,16 @@ function ActionModal({ modal, data, token, close, applyData }: { modal: Exclude<
   return (
     <div className="modal-backdrop">
       <section className="modal">
-        <div className="modal-head"><h3>{modalTitle(modal)}</h3><button className="light" onClick={close}>Close</button></div>
+        <div className="modal-head"><h3>{modalTitle(modal)}</h3><button className="light" onClick={close}>關閉</button></div>
         <form className="form-grid" onSubmit={handleSubmit}>
           {modal.type === 'project' && <ProjectFields />}
           {modal.type === 'task' && <TaskFields data={data} project={modal.project} />}
           {modal.type === 'edit' && <TaskFields data={data} task={modal.task} />}
-          {modal.type === 'followUp' && <TaskFields data={data} sourceTask={modal.task} title={`${modal.task.ResultReason || 'Task issue'}, follow up: ${modal.task.TaskName}`} />}
-          {modal.type === 'void' && <label>Void Reason<input name="ResultReason" required /></label>}
-          {modal.type === 'result' && modal.action !== 'complete' && <label>Reason<input name="ResultReason" required /></label>}
-          {(modal.type === 'result' || modal.type === 'review') && <label>Comment<textarea name="Comment" required /></label>}
-          <button className="primary">Submit</button>
+          {modal.type === 'followUp' && <TaskFields data={data} sourceTask={modal.task} title={`${modal.task.ResultReason || '任務異常'}，後續處理：${modal.task.TaskName}`} />}
+          {modal.type === 'void' && <label>作廢原因<input name="ResultReason" required /></label>}
+          {modal.type === 'result' && modal.action !== 'complete' && <label>原因<input name="ResultReason" required /></label>}
+          {(modal.type === 'result' || modal.type === 'review') && <label>備註<textarea name="Comment" required /></label>}
+          <button className="primary">送出</button>
         </form>
       </section>
     </div>
@@ -424,19 +424,19 @@ function ActionModal({ modal, data, token, close, applyData }: { modal: Exclude<
 
 function ProjectFields() {
   const stages = [
-    ['\u8a55\u4f30\u4e2d', 'Evaluation'],
-    ['\u4f30\u50f9\u4e2d', 'Quoting'],
-    ['\u6253\u6a23\u4e2d', 'Sampling'],
-    ['\u5ba2\u6236\u627f\u8a8d\u4e2d', 'Customer approval'],
-    ['\u91cf\u7522\u4e2d', 'Mass production'],
-    ['\u8a02\u55ae\u7d50\u6848', 'Order closed']
+    ['\u8a55\u4f30\u4e2d', '評估中'],
+    ['\u4f30\u50f9\u4e2d', '估價中'],
+    ['\u6253\u6a23\u4e2d', '打樣中'],
+    ['\u5ba2\u6236\u627f\u8a8d\u4e2d', '客戶承認中'],
+    ['\u91cf\u7522\u4e2d', '量產中'],
+    ['\u8a02\u55ae\u7d50\u6848', '訂單結案']
   ];
   return (
     <>
-      <label>Project Code<input name="ProjectCode" placeholder="Auto if blank" /></label>
-      <label>Project Name<input name="ProjectName" required /></label>
-      <label>Item Codes<input name="ItemCodes" placeholder="Separate with /" /></label>
-      <label>Stage<select name="Stage">{stages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      <label>專案代碼<input name="ProjectCode" placeholder="空白時系統自動產生" /></label>
+      <label>專案名稱<input name="ProjectName" required /></label>
+      <label>品項代碼<input name="ItemCodes" placeholder="多個品項請用 / 分隔" /></label>
+      <label>進度<select name="Stage">{stages.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     </>
   );
 }
@@ -444,13 +444,13 @@ function ProjectFields() {
 function TaskFields({ data, project, task, sourceTask, title }: { data: AppData; project?: Project; task?: Task; sourceTask?: Task; title?: string }) {
   return (
     <>
-      {!project && !task && !sourceTask && <label>Project<select name="ProjectId" defaultValue={task?.ProjectId || sourceTask?.ProjectId}>{data.projects.map((item) => <option key={item.ProjectId} value={item.ProjectId}>{item.ProjectCode} / {item.ProjectName}</option>)}</select></label>}
-      <label>Task Type<select name="TaskType" defaultValue={task?.TaskType || TASK_TYPE_SUPPLIER_QUOTE}>{data.taskTypes.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-      <label>Assignee<select name="AssigneeEmail" defaultValue={task?.AssigneeEmail}>{data.users.map((item) => <option key={item.Email} value={item.Email}>{item.DisplayName} / {item.Role}</option>)}</select></label>
-      <label>Task Name<input name="TaskName" defaultValue={task?.TaskName || title || ''} required /></label>
-      <label>Description<textarea name="Description" defaultValue={task?.Description || (sourceTask ? `Source task: ${sourceTask.TaskCode} / ${sourceTask.TaskName}` : '')} /></label>
-      <label>Due Date<input type="date" name="DueDate" defaultValue={task?.DueDate || ''} required /></label>
-      <label>Standard Hours<input type="number" name="StandardHours" step="0.5" defaultValue={task?.StandardHours || 2} /></label>
+      {!project && !task && !sourceTask && <label>專案<select name="ProjectId" defaultValue={task?.ProjectId || sourceTask?.ProjectId}>{data.projects.map((item) => <option key={item.ProjectId} value={item.ProjectId}>{item.ProjectCode} / {item.ProjectName}</option>)}</select></label>}
+      <label>任務類型<select name="TaskType" defaultValue={task?.TaskType || TASK_TYPE_SUPPLIER_QUOTE}>{data.taskTypes.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+      <label>承辦人<select name="AssigneeEmail" defaultValue={task?.AssigneeEmail}>{data.users.map((item) => <option key={item.Email} value={item.Email}>{item.DisplayName} / {item.Role}</option>)}</select></label>
+      <label>任務名稱<input name="TaskName" defaultValue={task?.TaskName || title || ''} required /></label>
+      <label>任務說明<textarea name="Description" defaultValue={task?.Description || (sourceTask ? `來源任務：${sourceTask.TaskCode} / ${sourceTask.TaskName}` : '')} /></label>
+      <label>預計結案日<input type="date" name="DueDate" defaultValue={task?.DueDate || ''} required /></label>
+      <label>標準工時<input type="number" name="StandardHours" step="0.5" defaultValue={task?.StandardHours || 2} /></label>
     </>
   );
 }
@@ -459,8 +459,8 @@ function actionButtons(task: Task, user: User, setModal: (modal: ModalState) => 
   const editable = canReview(user, task) && [STATUS_IN_PROGRESS, STATUS_RETURNED].includes(task.TaskStatus);
   return (
     <>
-      {editable && <button className="light" onClick={() => setModal({ type: 'edit', task })}>Edit</button>}
-      {editable && <button className="bad" onClick={() => setModal({ type: 'void', task })}>Void</button>}
+      {editable && <button className="light" onClick={() => setModal({ type: 'edit', task })}>編輯</button>}
+      {editable && <button className="bad" onClick={() => setModal({ type: 'void', task })}>作廢</button>}
     </>
   );
 }
@@ -474,13 +474,13 @@ function Status({ status }: { status: string }) {
 }
 
 function modalTitle(modal: Exclude<ModalState, null>) {
-  if (modal.type === 'project') return 'New Project';
-  if (modal.type === 'task') return 'New Task';
-  if (modal.type === 'edit') return 'Edit Task';
-  if (modal.type === 'void') return 'Void Task';
-  if (modal.type === 'followUp') return 'Create Follow-up Task';
-  if (modal.type === 'result') return modal.action === 'complete' ? 'Submit Done' : modal.action === 'rejected' ? 'Report Rejected' : 'Report Blocked';
-  return modal.action === 'return' ? 'Return Task' : 'Close Task';
+  if (modal.type === 'project') return '新增專案';
+  if (modal.type === 'task') return '新增任務';
+  if (modal.type === 'edit') return '編輯任務';
+  if (modal.type === 'void') return '作廢任務';
+  if (modal.type === 'followUp') return '建立後續任務';
+  if (modal.type === 'result') return modal.action === 'complete' ? '回報完成' : modal.action === 'rejected' ? '回報未通過' : '回報異常';
+  return modal.action === 'return' ? '退回任務' : '結案任務';
 }
 
 function filterTasks(tasks: Task[], filters: { keyword: string; statusFilter: string; assigneeFilter: string; projectFilter: string }, data: AppData) {
