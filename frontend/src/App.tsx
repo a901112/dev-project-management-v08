@@ -414,7 +414,7 @@ function ActionModal({ modal, data, token, close, applyData }: { modal: Exclude<
           {modal.type === 'followUp' && <TaskFields data={data} sourceTask={modal.task} title={`${modal.task.ResultReason || 'Task issue'}, follow up: ${modal.task.TaskName}`} />}
           {modal.type === 'void' && <label>Void Reason<input name="ResultReason" required /></label>}
           {modal.type === 'result' && modal.action !== 'complete' && <label>Reason<input name="ResultReason" required /></label>}
-          {['result', 'review'].includes(modal.type) && <label>Comment<textarea name="Comment" required /></label>}
+          {(modal.type === 'result' || modal.type === 'review') && <label>Comment<textarea name="Comment" required /></label>}
           <button className="primary">Submit</button>
         </form>
       </section>
