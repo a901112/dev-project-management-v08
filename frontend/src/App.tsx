@@ -14,12 +14,20 @@ type ModalState =
   | { type: 'void'; task: Task }
   | null;
 
+type ProjectHealth = {
+  label: string;
+  title: string;
+  description: string;
+  tone: 'gray' | 'danger' | 'warn' | 'notice' | 'info' | 'ok' | 'idle';
+};
+
 const STATUS_IN_PROGRESS = '\u9032\u884c\u4e2d';
 const STATUS_RETURNED = '\u5df2\u9000\u56de';
 const STATUS_PENDING = '\u5f85\u8986\u5224';
 const STATUS_COMPLETED = '\u5df2\u5b8c\u6210';
 const STATUS_CLOSED = '\u5df2\u7d50\u6848';
 const STATUS_VOIDED = '\u4f5c\u5ee2';
+const STAGE_ORDER_CLOSED = '\u8a02\u55ae\u7d50\u6848';
 const RESULT_DONE = '\u5b8c\u6210';
 const TASK_TYPE_SUPPLIER_QUOTE = '\u4f9b\u61c9\u5546\u4f30\u50f9';
 
@@ -358,21 +366,123 @@ function HelpCards({ mode }: { mode: 'assignee' | 'review' }) {
 }
 
 function Projects({ data, setModal }: { data: AppData; setModal: (modal: ModalState) => void }) {
+  const rows = data.projects.map((project) => {
+    const tasks = data.tasks.filter((task) => String(task.ProjectId) === String(project.ProjectId));
+    const health = projectHealth(project, tasks);
+    const plannedCloseDate = getProjectPlannedCloseDate(project, tasks);
+    const openTasks = tasks.filter((task) => unfinishedStatuses.includes(task.TaskStatus));
+    const overdueTasks = openTasks.filter((task) => isOverdue(task));
+    return { project, tasks, health, plannedCloseDate, openTasks, overdueTasks };
+  });
+  const activeCount = rows.filter((row) => !isProjectClosed(row.project)).length;
+  const riskCount = rows.filter((row) => ['danger', 'warn'].includes(row.health.tone)).length;
+  const idleCount = rows.filter((row) => row.health.tone === 'idle').length;
+  const okCount = rows.filter((row) => row.health.tone === 'ok').length;
+
   return (
     <section className="content">
-      <div className="section-heading"><h2>專案管理</h2><button className="primary" onClick={() => setModal({ type: 'project' })}><Plus size={16} />新增專案</button></div>
-      <div className="project-grid">
-        {data.projects.map((project) => (
-          <article className="project-card" key={project.ProjectId}>
-            <strong>{project.ProjectCode}</strong>
-            <span>{project.ProjectName}</span>
-            <small>{project.ItemCodes || '無品項'} / {project.Stage}</small>
-            <button className="light" onClick={() => setModal({ type: 'task', project })}>新增任務</button>
-          </article>
+      <div className="section-heading">
+        <h2>專案管理</h2>
+        <button className="primary" onClick={() => setModal({ type: 'project' })}><Plus size={16} />新增專案</button>
+      </div>
+      <div className="project-summary-grid">
+        <Metric label="進行中專案" value={activeCount} />
+        <Metric label="需注意專案" value={riskCount} tone={riskCount ? 'bad' : ''} />
+        <Metric label="閒置專案" value={idleCount} tone={idleCount ? 'warn' : ''} />
+        <Metric label="狀態正常" value={okCount} tone="ok" />
+      </div>
+      <div className="project-panel table">
+        <div className="tr th project-list-grid">
+          <span>專案代碼</span><span>專案名稱 / 專案品項</span><span>新增日期</span><span>進度</span><span>專案健康度</span><span>任務</span><span>訂單層</span><span>操作</span>
+        </div>
+        {rows.map(({ project, tasks, health, plannedCloseDate, openTasks, overdueTasks }) => (
+          <div className="tr project-list-grid" key={project.ProjectId}>
+            <span><strong>{project.ProjectCode}</strong><small>{project.Status || '-'}</small></span>
+            <span>
+              <strong>{project.ProjectName}</strong>
+              <small>{renderItemChips(project.ItemCodes)}</small>
+            </span>
+            <span>{formatDateOnly(project.CreatedAt) || '-'}</span>
+            <span><Status status={project.Stage || '-'} /><small>預計結案：{plannedCloseDate || '-'}</small></span>
+            <span>
+              <span className="health-title"><em className={`health-badge ${health.tone}`}>{health.label}</em><strong>{health.title}</strong></span>
+              <small className="health-copy">{health.description}</small>
+            </span>
+            <span>
+              共 {tasks.length} 件
+              <small>未完成 {openTasks.length} 件{overdueTasks.length ? ` / 逾期 ${overdueTasks.length} 件` : ''}</small>
+            </span>
+            <span className="order-placeholder">待串接 ERP<small>訂單 / 客戶 / 出貨狀態</small></span>
+            <span><button className="light" onClick={() => setModal({ type: 'task', project })}>新增任務</button></span>
+          </div>
         ))}
+        {rows.length === 0 && <div className="empty">目前沒有專案。</div>}
       </div>
     </section>
   );
+}
+
+function renderItemChips(itemCodes: string) {
+  const items = splitItemCodes(itemCodes);
+  if (items.length === 0) return <em className="item-chip empty">尚未加入品號</em>;
+  return items.map((item) => <em className="item-chip" key={item}>{item}</em>);
+}
+
+function splitItemCodes(value: string) {
+  return String(value || '').split(/[\/、,，\s]+/).map((item) => item.trim()).filter(Boolean);
+}
+
+function projectHealth(project: Project, tasks: Task[]): ProjectHealth {
+  const itemCount = splitItemCodes(project.ItemCodes).length;
+  const plannedCloseDate = getProjectPlannedCloseDate(project, tasks);
+  const daysToClose = plannedCloseDate ? daysFromToday(plannedCloseDate) : null;
+  const openTasks = tasks.filter((task) => unfinishedStatuses.includes(task.TaskStatus));
+  const overdueTasks = openTasks.filter((task) => isOverdue(task));
+  const allTasksFinished = tasks.length > 0 && tasks.every((task) => [STATUS_COMPLETED, STATUS_CLOSED, STATUS_VOIDED].includes(task.TaskStatus));
+
+  if (isProjectClosed(project)) return { label: '已結案', title: '專案已結案', description: '此專案已結案，建議確認任務與 ERP 訂單資料是否完整。', tone: 'gray' };
+  if (daysToClose !== null && daysToClose < 0) return { label: '逾期', title: `逾期 ${Math.abs(daysToClose)} 天`, description: '此專案已超過預計結案日，請確認是否調整時程或催辦任務。', tone: 'danger' };
+  if (overdueTasks.length > 0) return { label: '注意', title: `逾期任務 ${overdueTasks.length} 件`, description: '目前已有任務超過預計結案日，請優先確認承辦進度。', tone: 'danger' };
+  if (daysToClose !== null && daysToClose <= 14) return { label: '即將到期', title: `即將到期 ${daysToClose} 天`, description: '距離預計結案日較近，建議確認剩餘任務是否能如期完成。', tone: 'warn' };
+  if (itemCount === 0) return { label: '待補資料', title: '尚未加入品號', description: '尚未加入專案品號，ERP 訂單資訊無法帶出。', tone: 'notice' };
+  if (tasks.length === 0) return { label: '待建立', title: '尚未建立任務', description: '此專案尚未建立開發流程任務，建議先建立任務清單。', tone: 'notice' };
+  if (allTasksFinished) return { label: '閒置', title: '閒置專案', description: '此專案曾建立任務且任務皆已完成，但專案尚未結案，請確認是否需要結案或建立後續任務。', tone: 'idle' };
+  if (openTasks.length > 0) return { label: '進行中', title: '仍有任務未完成', description: `目前尚有 ${openTasks.length} 件任務未完成，請持續追蹤承辦進度。`, tone: 'info' };
+  return { label: '正常', title: '目前狀態正常', description: '目前專案資料完整，任務與時程狀態正常。', tone: 'ok' };
+}
+
+function isProjectClosed(project: Project) {
+  return project.Status === STATUS_CLOSED || project.Status === STATUS_VOIDED || project.Stage === STAGE_ORDER_CLOSED;
+}
+
+function getProjectPlannedCloseDate(project: Project, tasks: Task[]) {
+  const fields = project as unknown as Record<string, string>;
+  const explicit = fields.PlannedCloseDate || fields.ExpectedCloseDate || fields.EstimatedCloseDate || fields.TargetCloseDate || fields.DueDate || fields['預計結案日'];
+  if (explicit) return formatDateOnly(explicit);
+  const taskDueDates = tasks.map((task) => formatDateOnly(task.DueDate)).filter(Boolean).sort();
+  return taskDueDates.at(-1) || '';
+}
+
+function daysFromToday(dateText: string) {
+  const date = parseDateOnly(dateText);
+  if (!date) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil((date.getTime() - today.getTime()) / 86400000);
+}
+
+function parseDateOnly(value: string) {
+  const normalized = String(value || '').trim().replace(/\//g, '-').slice(0, 10);
+  if (!normalized) return null;
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function formatDateOnly(value: string) {
+  const date = parseDateOnly(value);
+  return date ? date.toISOString().slice(0, 10) : '';
 }
 
 function Users({ data }: { data: AppData }) {
