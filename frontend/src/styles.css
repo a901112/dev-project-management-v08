@@ -195,7 +195,7 @@ textarea { min-height: 94px; resize: vertical; }
 .task-grid { grid-template-columns: 1.2fr 1fr 1.2fr 150px 120px 150px; }
 .compact-task-grid { grid-template-columns: 1.5fr 1fr 1.2fr 150px 120px; }
 .user-grid { grid-template-columns: 1fr 1fr 1fr 2fr; }
-.project-list-grid { grid-template-columns: 130px minmax(250px, 1.2fr) 120px 120px 120px minmax(230px, 1fr) 120px 150px 170px; min-width: 1320px; }
+.project-list-grid { grid-template-columns: 122px minmax(265px, 1.15fr) 132px 112px 100px minmax(260px, 1fr) 112px 138px 120px; min-width: 1260px; }
 .order-grid { grid-template-columns: 110px 120px 140px 95px 95px 110px 120px minmax(250px, 1fr); min-width: 1040px; }
 .empty { padding: 18px; color: #718096; }
 .empty-card { padding: 18px; color: #718096; }
@@ -327,6 +327,71 @@ textarea { min-height: 94px; resize: vertical; }
 .stage-track span.active { color: #fff; background: #245b74; }
 .item-row { display: flex; flex-wrap: wrap; gap: 4px; }
 .detail-table { margin-top: 12px; }
+
+/* Project list alignment pass */
+.project-panel .tr.project-list-grid:not(.th) {
+  align-items: stretch;
+  min-height: 100px;
+}
+.project-panel .tr.project-list-grid > span {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 13px 10px;
+}
+.project-panel .tr.project-list-grid.th > span {
+  justify-content: center;
+  min-height: 40px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+.project-panel .tr.project-list-grid.th > span:nth-child(3) {
+  font-size: 0;
+}
+.project-panel .tr.project-list-grid.th > span:nth-child(3)::before {
+  content: "開案日";
+  font-size: 13px;
+}
+.project-panel .tr.project-list-grid:not(.th) > span:nth-child(3) {
+  color: #22303a;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+.project-panel .tr.project-list-grid:not(.th) > span:nth-child(5) small {
+  display: none;
+}
+.project-panel .tr.project-list-grid:not(.th) > span:nth-child(9) {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 6px;
+}
+.project-panel .tr.project-list-grid:not(.th) > span:nth-child(9) .light {
+  min-height: 32px;
+  border-radius: 7px;
+  padding: 5px 9px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.project-panel .tr.project-list-grid:not(.th) > span:nth-child(9) .light svg {
+  width: 14px;
+  height: 14px;
+}
+.project-panel .health-title strong {
+  font-size: 14px;
+  line-height: 1.35;
+}
+.project-panel .health-copy {
+  max-width: 34em;
+  font-size: 12px;
+}
+.project-panel .project-name-button {
+  font-size: 15px;
+  line-height: 1.35;
+}
+.project-panel .link-button {
+  line-height: 1.35;
+}
 
 @media (max-width: 1180px) {
   .project-filter-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
