@@ -80,6 +80,7 @@ export const api = {
   getAppData: (token: string) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token }),
   createTask,
   createProject: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('createProject', { ...payload, ActorEmail: token }),
+  updateProject: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('updateProject', { ...payload, ActorEmail: token }),
   submitTaskResult: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('submitTaskResult', { ...payload, ActorEmail: token }),
   reviewTask: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('reviewTask', { ...payload, ActorEmail: token }),
   createFollowUpTask: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('createFollowUpTask', { ...payload, ActorEmail: token }),
