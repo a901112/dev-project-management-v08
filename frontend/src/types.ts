@@ -19,6 +19,34 @@ export type Project = {
   Stage: string;
   Status: string;
   CreatedAt: string;
+  PlannedCloseDate?: string;
+  ProjectStrategy?: string;
+  Priority?: string;
+  Description?: string;
+  Remark?: string;
+};
+
+export type ErpOrderLine = {
+  OrderKey: string;
+  MatchedProjectItem: string;
+  OrderType: string;
+  OrderNo: string;
+  Sequence: string;
+  OrderDate: string;
+  CustomerCode: string;
+  CustomerName: string;
+  CustomerOrderNo: string;
+  ItemNo: string;
+  CustomerItemNo: string;
+  ItemName: string;
+  Spec: string;
+  Unit: string;
+  OrderQty: string;
+  DeliveredQty: string;
+  UnshippedQty: string;
+  DueDate: string;
+  CloseCode: string;
+  SourceUpdatedAt: string;
 };
 
 export type Task = {
@@ -52,6 +80,7 @@ export type AppData = {
   users: User[];
   projects: Project[];
   tasks: Task[];
+  erpOrderLines?: ErpOrderLine[];
   comments: Record<string, string>[];
   transitions: Record<string, string>[];
   taskTypes: string[];
