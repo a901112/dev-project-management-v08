@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/patch-erp-order-layer.mjs && node scripts/patch-v09-project-controls.mjs && node scripts/patch-v10-project-list-density.mjs && node scripts/patch-v11-project-grid-override.mjs && node scripts/patch-v12-task-project-links.mjs && node scripts/patch-v14-unread-reminders.mjs",
+    "predev": "node scripts/patch-erp-order-layer.mjs && node scripts/patch-v09-project-controls.mjs && node scripts/patch-v10-project-list-density.mjs && node scripts/patch-v11-project-grid-override.mjs && node scripts/patch-v12-task-project-links.mjs && node scripts/patch-v14-unread-reminders.mjs && node scripts/patch-v15-dashboard-project-read.mjs",
     "dev": "vite",
-    "prebuild": "node scripts/patch-erp-order-layer.mjs && node scripts/patch-v09-project-controls.mjs && node scripts/patch-v10-project-list-density.mjs && node scripts/patch-v11-project-grid-override.mjs && node scripts/patch-v12-task-project-links.mjs && node scripts/patch-v14-unread-reminders.mjs",
+    "prebuild": "node scripts/patch-erp-order-layer.mjs && node scripts/patch-v09-project-controls.mjs && node scripts/patch-v10-project-list-density.mjs && node scripts/patch-v11-project-grid-override.mjs && node scripts/patch-v12-task-project-links.mjs && node scripts/patch-v14-unread-reminders.mjs && node scripts/patch-v15-dashboard-project-read.mjs",
     "build": "vite build",
     "typecheck": "tsc -b",
     "preview": "vite preview"
