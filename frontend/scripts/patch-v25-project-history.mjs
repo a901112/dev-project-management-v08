@@ -68,7 +68,7 @@ if (!app.includes('function ProjectHistoryPanel(')) {
         {histories.slice(0, 8).map((history, index) => {
           const lines = String(history.HistorySummary || history.HistoryRaw || '').split('\\n').map((line) => line.trim()).filter(Boolean).slice(0, 10);
           return (
-            <article className="history-card" key={` + "`" + `${history.MatchedItemCode || history.SourceItemNo}-${index}` + "`" + `}>
+            <article className="history-card" key={(history.MatchedItemCode || history.SourceItemNo || '-') + '-' + index}>
               <div className="history-card-head">
                 <strong>{history.MatchedItemCode || history.SourceItemNo || '-'}</strong>
                 {history.Progress && <em>{history.Progress}</em>}
