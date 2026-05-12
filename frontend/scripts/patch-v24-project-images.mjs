@@ -49,10 +49,21 @@ if (!app.includes('project-name-cell')) {
   );
 }
 
-if (!app.includes('project-visual-block')) {
+if (!app.includes('project-detail-main-grid')) {
   app = app.replace(
-    /(\s*<div className="detail-title-row"><h3>.*?<\/h3><em className=\{`health-badge \$\{health\.tone\}`\}>\{health\.label\}<\/em><\/div>\s*)<div className="field-grid">/s,
-    '$1<div className="project-visual-block"><ProjectImage project={project} variant="hero" /></div>\n          <div className="field-grid">'
+    /<div className="detail-grid">\s*<section className="detail-panel project-main-panel">([\s\S]*?)<\/section>\s*<section className="detail-panel">\s*<h3>[^<]*<\/h3>([\s\S]*?)<\/section>\s*<\/div>/,
+    `<div className="detail-grid project-detail-main-grid">
+        <div className="project-detail-left-stack">
+          <section className="detail-panel project-main-panel">$1</section>
+          <section className="detail-panel">
+            <h3>${'\u5c08\u6848\u6458\u8981\u5224\u65b7'}</h3>$2
+          </section>
+        </div>
+        <section className="detail-panel project-photo-panel">
+          <div className="detail-title-row"><h3>${'\u7522\u54c1\u7167\u7247'}</h3><span className="muted">{project.ImageUpdatedAt ? \`${'\u66f4\u65b0'}：\${formatDateOnly(project.ImageUpdatedAt)}\` : '${'\u53ef\u5728\u7de8\u8f2f\u5c08\u6848\u4e2d\u66f4\u63db\u7167\u7247'}'}</span></div>
+          <div className="project-visual-block"><ProjectImage project={project} variant="hero" /></div>
+        </section>
+      </div>`
   );
 }
 
@@ -65,10 +76,9 @@ if (!app.includes('ImageUrl: changes.ImageUrl')) {
 
 if (!app.includes('name="ImageUrl"')) {
   app = app.replace(
-    `      <label className="wide-field">專案說明<textarea name="Description" defaultValue={project?.Description || ''} placeholder="開案原因、客戶需求、注意事項" /></label>`,
-    `      <label className="wide-field">產品圖片網址<input name="ImageUrl" defaultValue={project?.ImageUrl || ''} placeholder="可貼 Google Drive 圖片網址或 data:image/jpeg;base64..." /></label>
-      <label className="wide-field">圖片來源路徑<input name="ImageSourcePath" defaultValue={project?.ImageSourcePath || ''} placeholder="原始圖片位置，方便日後回查或換圖" /></label>
-      <label className="wide-field">專案說明<textarea name="Description" defaultValue={project?.Description || ''} placeholder="開案原因、客戶需求、注意事項" /></label>`
+    /(\s*<label className="wide-field">[^<]*<textarea name="Description" defaultValue=\{project\?\.Description \|\| ''\} placeholder="[^"]*" \/><\/label>)/,
+    `      <label className="wide-field">${'\u7522\u54c1\u5716\u7247\u7db2\u5740'}<input name="ImageUrl" defaultValue={project?.ImageUrl || ''} placeholder="${'\u53ef\u8cbc'} Google Drive ${'\u5716\u7247\u7db2\u5740\u6216'} data:image/jpeg;base64..." /></label>
+      <label className="wide-field">${'\u5716\u7247\u4f86\u6e90\u8def\u5f91'}<input name="ImageSourcePath" defaultValue={project?.ImageSourcePath || ''} placeholder="${'\u539f\u59cb\u5716\u7247\u4f4d\u7f6e\uff0c\u65b9\u4fbf\u65e5\u5f8c\u56de\u67e5\u6216\u63db\u5716'}" /></label>$1`
   );
 }
 
@@ -77,9 +87,9 @@ if (!css.includes('.project-image')) {
 
 .project-name-cell {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr);
   align-items: start;
-  gap: 9px;
+  gap: 12px;
   width: 100%;
 }
 .project-image {
@@ -90,13 +100,12 @@ if (!css.includes('.project-image')) {
   object-fit: contain;
 }
 .project-image.thumb {
-  width: 54px;
-  height: 54px;
+  width: 88px;
+  height: 88px;
 }
 .project-image.hero {
-  width: min(260px, 100%);
-  height: 220px;
-  margin-bottom: 12px;
+  width: 100%;
+  height: clamp(360px, 42vw, 620px);
 }
 .project-image.empty {
   display: grid;
@@ -112,8 +121,68 @@ if (!css.includes('.project-image')) {
   font-size: 16px;
 }
 .project-visual-block {
+  width: 100%;
+}
+.project-detail-main-grid {
+  grid-template-columns: minmax(430px, 0.9fr) minmax(460px, 1.1fr);
+  align-items: stretch;
+}
+.project-detail-left-stack {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+.project-photo-panel {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  min-height: 100%;
+}
+.project-photo-panel .project-visual-block {
+  flex: 1;
+  display: flex;
+}
+.project-photo-panel .project-image.hero {
+  flex: 1;
+}
+`;
+}
+
+if (!css.includes('project-detail-main-grid')) {
+  css += `
+
+.project-name-cell {
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+}
+.project-image.thumb {
+  width: 88px;
+  height: 88px;
+}
+.project-image.hero {
+  width: 100%;
+  height: clamp(360px, 42vw, 620px);
+}
+.project-detail-main-grid {
+  grid-template-columns: minmax(430px, 0.9fr) minmax(460px, 1.1fr);
+  align-items: stretch;
+}
+.project-detail-left-stack {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+.project-photo-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.project-photo-panel .project-visual-block {
+  flex: 1;
+  display: flex;
+  width: 100%;
+}
+.project-photo-panel .project-image.hero {
+  flex: 1;
 }
 `;
 }
