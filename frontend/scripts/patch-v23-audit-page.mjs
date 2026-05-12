@@ -51,7 +51,7 @@ if (!app.includes('function Audit(')) {
     ].some((value) => String(value || '').toLowerCase().includes(text)));
   }, [allIssues, keyword]);
   const visibleIssues = filteredIssues.slice(0, 200);
-  const orderCount = new Set(allIssues.map(({ order }) => order.OrderKey || \`${order.OrderType}-${order.OrderNo}\`)).size;
+  const orderCount = new Set(allIssues.map(({ order }) => order.OrderKey || String(order.OrderType || '') + '-' + String(order.OrderNo || ''))).size;
   const itemCount = new Set(allIssues.map(({ order }) => normalizeMatchText(order.ItemNo)).filter(Boolean)).size;
 
   return (
@@ -82,7 +82,7 @@ if (!app.includes('function Audit(')) {
             <span>問題</span><span>訂單</span><span>訂單日</span><span>客戶</span><span>品號</span><span>客戶品號</span><span>預交日</span><span>品名</span><span>數量</span><span>建議</span>
           </div>
           {visibleIssues.map(({ order }) => (
-            <div className="tr audit-grid" key={order.OrderKey || \`${order.OrderType}-${order.OrderNo}-${order.ItemNo}\`}>
+            <div className="tr audit-grid" key={order.OrderKey || String(order.OrderType || '') + '-' + String(order.OrderNo || '') + '-' + String(order.ItemNo || '')}>
               <span><em className="health-badge danger">未開案</em></span>
               <span><strong>{order.OrderType}-{order.OrderNo}</strong><small>{orderStatusLabel(order)}</small></span>
               <span>{formatDateOnly(orderDateValue(order, 'OrderDate')) || '-'}</span>
