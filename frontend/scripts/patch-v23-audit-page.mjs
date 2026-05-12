@@ -32,8 +32,7 @@ if (!app.includes('function Audit(')) {
     "function Users({ data }: { data: AppData }) {",
     `function Audit({ data }: { data: AppData }) {
   const [keyword, setKeyword] = useState('');
-  const [openOnly, setOpenOnly] = useState(false);
-  const allIssues = useMemo(() => missingProjectOrderIssues(data, openOnly), [data, openOnly]);
+  const allIssues = useMemo(() => missingProjectOrderIssues(data), [data]);
   const filteredIssues = useMemo(() => {
     const text = keyword.trim().toLowerCase();
     if (!text) return allIssues;
@@ -59,18 +58,18 @@ if (!app.includes('function Audit(')) {
       <div className="section-heading">
         <div>
           <h2>異常判讀</h2>
-          <p className="muted">第一版先檢查 2203 / 2204 訂單是否尚未建立對應的開發專案。</p>
+          <p className="muted">第一版先檢查 2203 / 2204、確認碼 Y、狀態碼 N 的訂單是否尚未建立對應的開發專案。</p>
         </div>
       </div>
       <div className="metric-grid">
         <Metric label="異常明細" value={allIssues.length} tone={allIssues.length ? 'bad' : ''} />
         <Metric label="影響訂單" value={orderCount} tone={orderCount ? 'warn' : ''} />
         <Metric label="影響品號" value={itemCount} />
-        <Metric label="檢查範圍" value="2203 / 2204" />
+        <Metric label="檢查範圍" value="2203/2204 + Y/N" />
       </div>
       <div className="panel audit-filter-panel">
         <label>關鍵字<input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="訂單 / 客戶 / 品號 / 品名" /></label>
-        <label className="check-line"><input type="checkbox" checked={openOnly} onChange={(event) => setOpenOnly(event.target.checked)} />只看未結案</label>
+        <div className="audit-rule-note">確認碼 Y，狀態碼 N</div>
       </div>
       <div className="panel">
         <div className="audit-summary">
@@ -102,10 +101,10 @@ if (!app.includes('function Audit(')) {
   );
 }
 
-function missingProjectOrderIssues(data: AppData, openOnly: boolean) {
+function missingProjectOrderIssues(data: AppData) {
   return (data.erpOrderLines || [])
     .filter((order) => ['2203', '2204'].includes(String(order.OrderType || '').trim()))
-    .filter((order) => !openOnly || !isOrderClosed(order))
+    .filter((order) => String(order.CloseCode || '').trim().toUpperCase() === 'N')
     .filter((order) => !findProjectForOrder(data.projects, order))
     .sort((a, b) =>
       String(orderDateValue(b, 'OrderDate') || '').localeCompare(String(orderDateValue(a, 'OrderDate') || '')) ||
@@ -150,6 +149,14 @@ if (!css.includes('.audit-filter-panel')) {
 }
 .check-line input {
   width: auto;
+}
+.audit-rule-note {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: #52616b;
+  font-size: 13px;
+  font-weight: 800;
 }
 .audit-summary {
   display: flex;
