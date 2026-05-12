@@ -37,17 +37,17 @@ if (!types.includes('projectHistories?: ProjectHistory[];')) {
   );
 }
 
-if (!app.includes('const histories = projectHistoriesForProject(data, project);')) {
+if (!app.includes('const detailHistories = projectHistoriesForProject(data, project);')) {
   app = app.replace(
-    '  const projectOpenDate = getProjectOpenDate(project, orderLines);',
-    '  const projectOpenDate = getProjectOpenDate(project, orderLines);\n  const histories = projectHistoriesForProject(data, project);'
+    '  const customerCodes = uniqueCustomerCodes(orderLines);\n  const projectOpenDate = getProjectOpenDate(project, orderLines);\n\n  async function setProjectStatus',
+    '  const customerCodes = uniqueCustomerCodes(orderLines);\n  const projectOpenDate = getProjectOpenDate(project, orderLines);\n  const detailHistories = projectHistoriesForProject(data, project);\n\n  async function setProjectStatus'
   );
 }
 
-if (!app.includes('<ProjectHistoryPanel histories={histories} />')) {
+if (!app.includes('<ProjectHistoryPanel histories={detailHistories} />')) {
   app = app.replace(
     '<div className="project-visual-block"><ProjectImage project={project} variant="hero" /></div>',
-    '<div className="project-visual-block"><ProjectImage project={project} variant="hero" /></div>\n          <ProjectHistoryPanel histories={histories} />'
+    '<div className="project-visual-block"><ProjectImage project={project} variant="hero" /></div>\n          <ProjectHistoryPanel histories={detailHistories} />'
   );
 }
 
