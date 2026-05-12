@@ -73,7 +73,7 @@ if (!app.includes('function ProjectHistoryPanel(')) {
                 <strong>{history.MatchedItemCode || history.SourceItemNo || '-'}</strong>
                 {history.Progress && <em>{history.Progress}</em>}
               </div>
-              <small>{[history.SourceItemNo, history.CustomerItemNo, history.ItemName, history.Spec].filter(Boolean).join(' / ')}</small>
+              <small>{[history.SourceItemNo, history.CustomerItemNo, history.ItemName].filter(Boolean).join(' / ')}</small>
               <ul>{lines.map((line, lineIndex) => <li key={lineIndex}>{line}</li>)}</ul>
             </article>
           );
