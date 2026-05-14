@@ -26,7 +26,7 @@ function jsonp<T>(action: string, payload: Record<string, unknown> = {}): Promis
     const timer = window.setTimeout(() => {
       cleanup();
       reject(new Error('Apps Script API timeout'));
-    }, 20000);
+    }, 90000);
 
     function cleanup() {
       window.clearTimeout(timer);
