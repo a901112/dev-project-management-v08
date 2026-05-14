@@ -1,4 +1,4 @@
-import type { AppData, LoginResult } from './types';
+import type { AppData, LoginResult, Project } from './types';
 
 const defaultApiUrl = 'https://script.google.com/a/macros/asiasurge.com/s/AKfycbwZtncBGTvjtiplhFLjxXDP5PeR1fIs0IpyJpHqw3VuYbUJwp6HNcYias2eqEha8F8Q/exec';
 
@@ -81,6 +81,7 @@ export const api = {
   createTask,
   createProject: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('createProject', { ...payload, ActorEmail: token }),
   updateProject: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('updateProject', { ...payload, ActorEmail: token }),
+  updateProjectPatch: (token: string, payload: Record<string, unknown>) => jsonp<Project>('updateProjectPatch', { ...payload, ActorEmail: token }),
   submitTaskResult: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('submitTaskResult', { ...payload, ActorEmail: token }),
   reviewTask: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('reviewTask', { ...payload, ActorEmail: token }),
   createFollowUpTask: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('createFollowUpTask', { ...payload, ActorEmail: token }),
