@@ -77,7 +77,7 @@ function createTask(token: string, payload: Record<string, unknown>) {
 
 export const api = {
   login: (account: string, password: string) => jsonp<LoginResult>('login', { Account: account, Password: password }),
-  getAppData: (token: string) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token }),
+  getAppData: (token: string) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token, IncludeActivityLogs: true }),
   createTask,
   createProject: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('createProject', { ...payload, ActorEmail: token }),
   updateProject: (token: string, payload: Record<string, unknown>) => jsonp<AppData>('updateProject', { ...payload, ActorEmail: token }),
