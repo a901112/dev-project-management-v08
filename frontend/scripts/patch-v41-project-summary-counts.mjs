@@ -4,12 +4,12 @@ const appPath = new URL('../src/App.tsx', import.meta.url);
 
 const replacements = [
   {
-    legacy: "const activeCount = rows.filter((row) => !isProjectClosed(row.project)).length;",
-    fixed: "const activeCount = rows.filter((row) => row.health.tone === 'info').length;"
-  },
-  {
     legacy: "const riskCount = rows.filter((row) => ['danger', 'warn'].includes(row.health.tone)).length;",
     fixed: "const riskCount = rows.filter((row) => ['danger', 'warn', 'notice'].includes(row.health.tone)).length;"
+  },
+  {
+    legacy: "const okCount = rows.filter((row) => row.health.tone === 'ok').length;",
+    fixed: "const okCount = rows.filter((row) => row.health.tone === 'info').length;"
   }
 ];
 
