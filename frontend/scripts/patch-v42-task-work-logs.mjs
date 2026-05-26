@@ -71,12 +71,18 @@ api = replaceOnce(
 );
 
 if (!app.includes('TaskWorkLog')) {
-  app = replaceRequired(
+  const before = app;
+  app = replaceOnce(
+    app,
+    `import type { AppData, ErpOrderLine, Project, Task, User } from './types';`,
+    `import type { AppData, ErpOrderLine, Project, Task, TaskWorkLog, User } from './types';`
+  );
+  app = replaceOnce(
     app,
     `import type { AppData, Project, Task, User } from './types';`,
-    `import type { AppData, Project, Task, TaskWorkLog, User } from './types';`,
-    'App type import'
+    `import type { AppData, Project, Task, TaskWorkLog, User } from './types';`
   );
+  if (app === before) throw new Error('patch-v42 marker not found: App type import');
 }
 
 if (!app.includes(`| { type: 'workLog'; task: Task }`)) {
