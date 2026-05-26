@@ -103,10 +103,9 @@ const workLogTypes = ['跟催', '等待外部', '已發出需求', '收到資料
   );
 }
 
-app = replaceOnce(
-  app,
-  `<article className="history-item" key={item.TransitionId || \`${item.TaskId}-${item.CreatedAt}-${item.Action}\`}>`,
-  `<article className="history-item" key={item.TransitionId || item.WorkLogId || \`${item.TaskId}-${item.CreatedAt}-${item.Action}\`}>`
+app = app.replace(
+  /<article className="history-item" key=\{item\.TransitionId \|\| `\$\{item\.TaskId\}-\$\{item\.CreatedAt\}-\$\{item\.Action\}`\}>/,
+  `<article className="history-item" key={item.TransitionId || item.WorkLogId || [item.TaskId, item.CreatedAt, item.Action].join('-')}>`
 );
 
 if (!app.includes(`setModal({ type: 'workLog', task })}><MessageSquareText size={14} />新增紀錄`)) {
@@ -136,10 +135,8 @@ if (!app.includes(`api.createTaskWorkLog`)) {
 if (!app.includes(`modal.type === 'workLog' && <WorkLogFields`)) {
   app = replaceRequired(
     app,
-    `          {modal.type === 'followUp' && <TaskFields data={data} sourceTask={modal.task} title={\`${modal.task.ResultReason || '任務異常'}，後續處理：${modal.task.TaskName}\`} />}
-          {modal.type === 'void' && <label>作廢原因<input name="ResultReason" required /></label>}`,
-    `          {modal.type === 'followUp' && <TaskFields data={data} sourceTask={modal.task} title={\`${modal.task.ResultReason || '任務異常'}，後續處理：${modal.task.TaskName}\`} />}
-          {modal.type === 'workLog' && <WorkLogFields task={modal.task} />}
+    `          {modal.type === 'void' && <label>作廢原因<input name="ResultReason" required /></label>}`,
+    `          {modal.type === 'workLog' && <WorkLogFields task={modal.task} />}
           {modal.type === 'void' && <label>作廢原因<input name="ResultReason" required /></label>}`,
     'ActionModal WorkLogFields'
   );
@@ -152,7 +149,7 @@ if (!app.includes('function WorkLogFields(')) {
     `function WorkLogFields({ task }: { task: Task }) {
   return (
     <>
-      <label>任務<input value={\`${task.TaskCode} / ${task.TaskName}\`} readOnly /></label>
+      <label>任務<input value={task.TaskCode + ' / ' + task.TaskName} readOnly /></label>
       <label>紀錄類型
         <select name="LogType" defaultValue="跟催">
           {workLogTypes.map((type) => <option key={type} value={type}>{type}</option>)}
@@ -230,7 +227,7 @@ function getTaskHistory(data: AppData, task: Task): TaskHistoryItem[] {
       FromStatus: '',
       ToStatus: '',
       FromResult: '',
-      ToResult: item.NextFollowUpDate ? \`下次跟催 ${item.NextFollowUpDate}\` : '',
+      ToResult: item.NextFollowUpDate ? '下次跟催 ' + item.NextFollowUpDate : '',
       Action: 'WorkLog',
       ActionLabel: item.LogType || '工作紀錄',
       Note: [item.ContactTarget, item.Content].filter(Boolean).join(' / '),
