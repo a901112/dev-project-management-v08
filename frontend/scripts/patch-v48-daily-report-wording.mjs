@@ -27,4 +27,24 @@ replaceAll(
   `這一天沒有非任務工作回報。此區目前只展示已登錄資料；補登入口尚未開放。`
 );
 
+replaceAll(
+  `<h3><ClipboardList size={18} />AI 日報草稿</h3>`,
+  `<h3><ClipboardList size={18} />日報草稿</h3>`
+);
+
+if (!app.includes('function dailyReportStatusLabel(')) {
+  app = app.replace(
+    `function DailyReportCard({ data, report, items }: { data: AppData; report: DailyReport; items: DailyReportItem[] }) {`,
+    `function dailyReportStatusLabel(status: string) {
+  const value = String(status || '').trim();
+  if (!value || value === 'AI草稿' || value === 'AI 草稿' || value === 'AI 日報草稿') return '日報草稿';
+  return value.replace(/^AI\\s*/, '');
+}
+
+function DailyReportCard({ data, report, items }: { data: AppData; report: DailyReport; items: DailyReportItem[] }) {`
+  );
+}
+
+app = app.replace(`<span>{report.Status || 'AI草稿'}</span>`, `<span>{dailyReportStatusLabel(report.Status)}</span>`);
+
 fs.writeFileSync(appPath, app, 'utf8');
