@@ -13,7 +13,7 @@ const newBlock = `function dailyTaskTitle(data: AppData, task: Task) {
     .replace(/[()\\uFF08\\uFF09]/g, ' ')
     .trim();
   const shortName = compactText(rawName || task.TaskType || 'Task', 12);
-  return itemNo ? \`${itemNo}(${shortName})\` : shortName;
+  return itemNo ? \`\${itemNo}(\${shortName})\` : shortName;
 }
 
 function dailyBriefItemCode(source: string) {
