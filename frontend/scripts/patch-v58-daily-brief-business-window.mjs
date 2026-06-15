@@ -84,7 +84,7 @@ if (!app.includes('function dailyBriefTargetWindow(')) {
 function formatDateRange(start: Date, end: Date) {
   const startText = formatLocalDate(start);
   const endText = formatLocalDate(end);
-  return startText === endText ? startText : \`${startText}~${endText}\`;
+  return startText === endText ? startText : startText + '~' + endText;
 }
 
 function startOfLocalDay(date: Date) {`
