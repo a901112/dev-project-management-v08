@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import './patch-v62-task-duplicate-guard.mjs';
 
 const appPath = new URL('../src/App.tsx', import.meta.url);
 let app = fs.readFileSync(appPath, 'utf8');
