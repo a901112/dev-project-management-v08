@@ -34,7 +34,7 @@ if (!api.includes("params.set('_'")) {
     payload: JSON.stringify(payload),
     callback: callbackName
   });
-  params.set('_', \`${Date.now()}_${callbackSeq}\`);
+  params.set('_', String(Date.now()) + '_' + callbackSeq);
 `,
     'jsonp cache buster'
   );
@@ -76,7 +76,7 @@ if (!app.includes('hasTodayReport')) {
     if (!token || !data || view !== 'dailyReports') return;
     const today = formatLocalDate(new Date());
     const hasTodayReport = (data.dailyReports || []).some((report) => normalizeDateText(report.ReportDate) === today);
-    const refreshKey = \`${token}:${today}\`;
+    const refreshKey = token + ':' + today;
     if (!hasTodayReport && dailyReportRefreshKeyRef.current !== refreshKey) {
       dailyReportRefreshKeyRef.current = refreshKey;
       refresh();
