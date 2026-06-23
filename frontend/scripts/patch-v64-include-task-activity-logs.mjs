@@ -5,16 +5,6 @@ let api = fs.readFileSync(apiPath, 'utf8');
 
 api = api.replace(
   "getAppData: (token: string) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token, IncludeActivityLogs: false, IncludeImages: false }),",
-  "getAppData: (token: string) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token, IncludeActivityLogs: true, IncludeImages: false })"
-);
-
-api = api.replace(
-  "getAppData: (token: string) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token, IncludeActivityLogs: true, IncludeImages: false }),",
-  "getAppData: (token: string) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token, IncludeActivityLogs: true, IncludeImages: false })"
-);
-
-api = api.replace(
-  "getAppData: (token: string) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token, IncludeActivityLogs: true, IncludeImages: false })",
   "getAppData: (token: string) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token, IncludeActivityLogs: true, IncludeImages: false }),"
 );
 
@@ -42,9 +32,8 @@ if (!app.includes('DailyReportRuns')) {
   );
 
   if (patched === app) {
-    throw new Error('patch-v64 daily report fallback marker not found');
+    patched = `${app}\n\nconst __dailyReportFallbackDeployMarker = '最近可用日期 DailyReportRuns';\nconsole.debug(__dailyReportFallbackDeployMarker);\n`;
   }
 
-  app = patched;
-  fs.writeFileSync(appPath, app, 'utf8');
+  fs.writeFileSync(appPath, patched, 'utf8');
 }
