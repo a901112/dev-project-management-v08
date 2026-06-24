@@ -20,6 +20,42 @@ app = app.replace(/import type \{([^}]+)\} from '\.\/types';/, (match, names) =>
   return `import type { ${parts.join(', ')} } from './types';`;
 });
 
+if (!app.includes('function approveReviewQuick')) {
+  app = app.replace(
+    `function TaskCards({ data, tasks, user, mode, setModal, applyData, token, openProject }: { data: AppData; tasks: Task[]; user: User; mode: 'assignee' | 'review'; setModal: (modal: ModalState) => void; applyData: (data: AppData) => void; token: string; openProject: (project: Project) => void }) {
+`,
+    `function TaskCards({ data, tasks, user, mode, setModal, applyData, token, openProject }: { data: AppData; tasks: Task[]; user: User; mode: 'assignee' | 'review'; setModal: (modal: ModalState) => void; applyData: (data: AppData) => void; token: string; openProject: (project: Project) => void }) {
+  const [quickReview, setQuickReview] = useState<{ taskId: string; state: 'pending' | 'success' | 'error'; message: string } | null>(null);
+  async function approveReviewQuick(task: Task) {
+    const taskId = String(task.TaskId || '');
+    if (quickReview?.state === 'pending') return;
+    setQuickReview({ taskId, state: 'pending', message: '\u8986\u5224\u5b8c\u6210\u9001\u51fa\u4e2d...' });
+    try {
+      const result = await api.reviewTask(token, { TaskId: task.TaskId, Action: 'approve', Comment: 'PM \u8986\u5224\u5b8c\u6210' });
+      applyData(mergeMutationIntoData(data, result));
+      setQuickReview({ taskId, state: 'success', message: '\u5df2\u8986\u5224\u5b8c\u6210' });
+      window.setTimeout(() => {
+        setQuickReview((current) => current?.taskId === taskId && current.state === 'success' ? null : current);
+      }, 3500);
+    } catch (err) {
+      setQuickReview({ taskId, state: 'error', message: cleanActionError(err) });
+    }
+  }
+  const quickNotice = quickReview
+    ? <div className={quickReview.state === 'error' ? 'error' : 'notice'}>{quickReview.message}</div>
+    : null;
+`
+  );
+}
+
+app = app.replace(
+  /if \(tasks\.length === 0\) return <div className="empty-card">.*?<\/div>;/,
+  `if (tasks.length === 0) return <>{quickNotice}<div className="empty-card">{'\u6c92\u6709\u7b26\u5408\u689d\u4ef6\u7684\u4efb\u52d9\u3002'}</div></>;`
+);
+if (app.includes('<div className="task-list">') && !app.includes('<div className="task-list">\n      {quickNotice}')) {
+  app = app.replace('<div className="task-list">', '<div className="task-list">\n      {quickNotice}');
+}
+
 if (!app.includes('function mergeMutationIntoData')) {
   const helper = `function mergeMutationIntoData(data: AppData, result: MutationResult): AppData {
   const mergeTask = (tasks: Task[], task?: Task | null) => {
@@ -79,14 +115,28 @@ app = app.replace(
   'next = mergeMutationIntoData(data, await api.$1($2));'
 );
 
+app = app.replace(
+  /\{task\.TaskResult === RESULT_DONE && <button className="ok"[^>]*onClick=\{[^}]*api\.reviewTask[^}]+\}[^<]*<\/button>\}/g,
+  `{task.TaskResult === RESULT_DONE && <button className="ok" disabled={quickReview?.state === 'pending' && quickReview.taskId === String(task.TaskId || '')} onClick={() => approveReviewQuick(task)}>{quickReview?.state === 'pending' && quickReview.taskId === String(task.TaskId || '') ? '\u8986\u5224\u4e2d...' : '\u8986\u5224\u5b8c\u6210'}</button>}`
+);
+
 if (!app.includes('mergeMutationIntoData(data, await api.submitTaskResult')) {
   throw new Error('patch-v64: submitTaskResult mutation merge was not applied');
 }
 if (!app.includes('mergeMutationIntoData(data, await api.createTaskWorkLog')) {
   throw new Error('patch-v64: createTaskWorkLog mutation merge was not applied');
 }
-if (!app.includes("applyData(mergeMutationIntoData(data, await api.reviewTask(token, { TaskId: task.TaskId, Action: 'approve'")) {
-  throw new Error('patch-v64: quick approve reviewTask mutation merge was not applied');
+if (!app.includes('function approveReviewQuick')) {
+  throw new Error('patch-v64: quick approve handler was not applied');
+}
+if (!app.includes('disabled={quickReview?.state')) {
+  throw new Error('patch-v64: quick approve pending/disabled state was not applied');
+}
+if (!app.includes("setQuickReview({ taskId, state: 'success'")) {
+  throw new Error('patch-v64: quick approve success feedback was not applied');
+}
+if (!app.includes('applyData(mergeMutationIntoData(data, result))')) {
+  throw new Error('patch-v64: quick approve mutation result merge was not applied');
 }
 if (!app.includes('mergeMutationIntoData(data, await api.reviewTask')) {
   throw new Error('patch-v64: modal reviewTask mutation merge was not applied');
