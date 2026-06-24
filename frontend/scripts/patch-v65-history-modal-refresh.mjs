@@ -66,6 +66,64 @@ app = app.replace(/import type \{([^}]+)\} from '\.\/types';/, (match, names) =>
   return `import type { ${parts.join(', ')} } from './types';`;
 });
 
+const historyEffectBlock = `  const [historySyncing, setHistorySyncing] = useState(false);
+  const [historySyncError, setHistorySyncError] = useState('');
+  const historySyncTaskRef = useRef('');
+
+  useEffect(() => {
+    if (modal.type !== 'history') return;
+    const taskKey = String(modal.task.TaskId || modal.task.TaskCode || '');
+    if (!taskKey || historySyncTaskRef.current === taskKey) return;
+    historySyncTaskRef.current = taskKey;
+    let cancelled = false;
+    setHistorySyncing(true);
+    setHistorySyncError('');
+    api.getTaskHistory(token, { TaskId: modal.task.TaskId, TaskCode: modal.task.TaskCode })
+      .then((result) => {
+        if (!cancelled) applyData(mergeTaskHistoryIntoData(data, result));
+      })
+      .catch((err) => {
+        if (!cancelled) setHistorySyncError(errorMessage(err));
+      })
+      .finally(() => {
+        if (!cancelled) setHistorySyncing(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [modal, token, data, applyData]);
+
+`;
+
+if (!app.includes('const historySyncTaskRef = useRef')) {
+  app = app.replace(
+    `function ActionModal({ modal, data, token, close, applyData }: { modal: Exclude<ModalState, null>; data: AppData; token: string; close: () => void; applyData: (data: AppData) => void }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+`,
+    `function ActionModal({ modal, data, token, close, applyData }: { modal: Exclude<ModalState, null>; data: AppData; token: string; close: () => void; applyData: (data: AppData) => void }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+${historyEffectBlock}`
+  );
+}
+
+if (!app.includes('Syncing latest history...')) {
+  app = app.replace(
+    `          <div className="history-task-head">
+            <strong>{modal.task.TaskCode}</strong>
+            <span>{modal.task.TaskName}</span>
+          </div>
+`,
+    `          <div className="history-task-head">
+            <strong>{modal.task.TaskCode}</strong>
+            <span>{modal.task.TaskName}</span>
+          </div>
+          {historySyncing && <div className="notice">Syncing latest history...</div>}
+          {historySyncError && <div className="error">History sync failed: {historySyncError}</div>}
+`
+  );
+}
 if (!app.includes('function mergeTaskHistoryIntoData')) {
   const helper = `function mergeTaskHistoryIntoData(data: AppData, result: TaskHistoryResult): AppData {
   const mergeByKey = <T extends object>(
