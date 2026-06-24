@@ -42,13 +42,18 @@ if (!app.includes('function mergeMutationIntoData')) {
       : [workLog, ...current];
   };
 
-  return {
+  const next = {
     ...data,
     currentUser: result.currentUser || data.currentUser,
     projects: mergeProject(data.projects, result.project),
     tasks: mergeTask(mergeTask(data.tasks, result.task), result.nextTask),
     workLogs: mergeWorkLog(data.workLogs, result.workLog)
   };
+  Object.defineProperty(next, '__pmMutationMergeMarker', {
+    value: 'pm-v08-mutation-merge-v64',
+    enumerable: false
+  });
+  return next;
 }
 
 `;
@@ -60,8 +65,13 @@ if (!app.includes('function mergeMutationIntoData')) {
 }
 
 app = app.replace(
-  /applyData\(await api\.reviewTask\(token, \{ TaskId: task\.TaskId, Action: 'approve', Comment: ([^}]+) \}\)\)\)/g,
-  "applyData(mergeMutationIntoData(data, await api.reviewTask(token, { TaskId: task.TaskId, Action: 'approve', Comment: $1 })))"
+  /applyData\(\s*await\s+api\.reviewTask\(\s*token\s*,\s*(\{[^{}]*TaskId:\s*task\.TaskId[^{}]*Action:\s*'approve'[^{}]*\})\s*\)\s*\)/g,
+  'applyData(mergeMutationIntoData(data, await api.reviewTask(token, $1)))'
+);
+
+app = app.replace(
+  /applyData\(\s*await\s+api\.reviewTask\(([^;]+?)\)\s*\)/g,
+  'applyData(mergeMutationIntoData(data, await api.reviewTask($1)))'
 );
 
 app = app.replace(
@@ -74,6 +84,18 @@ if (!app.includes('mergeMutationIntoData(data, await api.submitTaskResult')) {
 }
 if (!app.includes('mergeMutationIntoData(data, await api.createTaskWorkLog')) {
   throw new Error('patch-v64: createTaskWorkLog mutation merge was not applied');
+}
+if (!app.includes("applyData(mergeMutationIntoData(data, await api.reviewTask(token, { TaskId: task.TaskId, Action: 'approve'")) {
+  throw new Error('patch-v64: quick approve reviewTask mutation merge was not applied');
+}
+if (!app.includes('mergeMutationIntoData(data, await api.reviewTask')) {
+  throw new Error('patch-v64: modal reviewTask mutation merge was not applied');
+}
+if (/applyData\(await api\.reviewTask/.test(app)) {
+  throw new Error('patch-v64: direct reviewTask applyData remains');
+}
+if (/next = await api\.(createTask|createTaskWorkLog|submitTaskResult|reviewTask|createFollowUpTask|editTask|voidTask)\(/.test(app)) {
+  throw new Error('patch-v64: direct mutation AppData assignment remains');
 }
 
 if (!app.includes('function applyAppData(next: AppData)')) {
