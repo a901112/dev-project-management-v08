@@ -1,4 +1,4 @@
-export type Role = 'Admin' | 'PM' | 'Purchasing' | 'Sales' | 'Engineer' | 'Viewer';
+export type Role = 'Admin' | 'PM' | 'MIS' | 'Purchasing' | 'Sales' | 'Engineer' | 'Viewer' | 'SALES' | 'PURCHASING' | 'ENGINEER' | '璆剖?' | '撌亦?' | '?恣';
 
 export type User = {
   UserId: string;
@@ -8,6 +8,9 @@ export type User = {
   DisplayName: string;
   Role: Role;
   IsActive: string;
+  LastLoginAt?: string;
+  LastActiveAt?: string;
+  LoginCount?: string;
 };
 
 export type Project = {
@@ -24,6 +27,26 @@ export type Project = {
   Priority?: string;
   Description?: string;
   Remark?: string;
+  ImageUrl?: string;
+  ImageSourcePath?: string;
+  ImageUpdatedAt?: string;
+  HistorySummary?: string;
+  HistorySyncedAt?: string;
+};
+
+export type ProjectHistory = {
+  ProjectCode: string;
+  ProjectItemCodes: string;
+  MatchedItemCode: string;
+  SourceItemNo: string;
+  CustomerItemNo: string;
+  ItemName: string;
+  Spec: string;
+  Progress: string;
+  HistorySummary: string;
+  HistoryRaw: string;
+  SourceRows: string;
+  SourceUpdatedAt: string;
 };
 
 export type ErpOrderLine = {
@@ -73,6 +96,93 @@ export type Task = {
   NextTaskId: string;
   CreatedAt: string;
   UpdatedAt: string;
+  ReturnCount?: string;
+};
+
+export type TaskWorkLog = {
+  WorkLogId: string;
+  TaskId: string;
+  TaskCode: string;
+  ProjectId: string;
+  ProjectCode: string;
+  LogDate: string;
+  LogType: string;
+  ContactTarget: string;
+  Content: string;
+  NextFollowUpDate: string;
+  Hours: string;
+  CreatedByEmail: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+  ReturnCount?: string;
+};
+
+export type DailyReport = {
+  ReportId: string;
+  ReportDate: string;
+  TargetDate: string;
+  PersonEmail: string;
+  PersonName: string;
+  GeneratedBy: string;
+  GeneratedAt: string;
+  Status: string;
+  ConfirmedAt: string;
+  ConfirmedByEmail: string;
+  Summary: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+  ReturnCount?: string;
+};
+
+export type DailyReportItem = {
+  ItemId: string;
+  ReportId: string;
+  ReportDate: string;
+  TargetDate: string;
+  PersonEmail: string;
+  SectionType: string;
+  SortOrder: string;
+  TaskId: string;
+  TaskCode: string;
+  ProjectId: string;
+  ProjectCode: string;
+  ItemNo: string;
+  ItemNameShort: string;
+  AIContent: string;
+  UserContent: string;
+  SourceType: string;
+  SourceIds: string;
+  Confidence: string;
+  ActionRequired: string;
+  ReviewStatus: string;
+  ConvertedType: string;
+  ConvertedId: string;
+  ConfirmedAt: string;
+  UpdatedAt: string;
+};
+
+export type NonTaskWorkLog = {
+  NonTaskWorkLogId: string;
+  WorkDate: string;
+  PersonEmail: string;
+  WorkType: string;
+  RelatedItemNo: string;
+  RelatedItemNameShort: string;
+  RelatedProjectId: string;
+  RelatedProjectCode: string;
+  RelatedTaskId: string;
+  Content: string;
+  HasFollowUp: string;
+  FollowUpDate: string;
+  WaitingFor: string;
+  NeedsManagerDecision: string;
+  ReviewStatus: string;
+  ConvertedTaskId: string;
+  SourceDailyReportItemId: string;
+  CreatedByEmail: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+  Remark: string;
 };
 
 export type AppData = {
@@ -81,9 +191,83 @@ export type AppData = {
   projects: Project[];
   tasks: Task[];
   erpOrderLines?: ErpOrderLine[];
+  projectHistories?: ProjectHistory[];
+  workLogs?: TaskWorkLog[];
+  dailyReports?: DailyReport[];
+  dailyReportItems?: DailyReportItem[];
+  nonTaskWorkLogs?: NonTaskWorkLog[];
   comments: Record<string, string>[];
   transitions: Record<string, string>[];
   taskTypes: string[];
+};
+
+export type MutationResult = {
+  mutation: true;
+  action?: string;
+  currentUser?: User;
+  project?: Project | null;
+  task?: Task | null;
+  nextTask?: Task | null;
+  workLog?: TaskWorkLog | null;
+  unchanged?: boolean;
+};
+
+export type UserWorkReportSummary = {
+  Email: string;
+  DisplayName: string;
+  Role: string;
+  LastLoginAt: string;
+  LastActiveAt: string;
+  LoginCount: number;
+  LoginInRange: boolean;
+  ActiveInRange: boolean;
+  CreatedProjects: number;
+  EditedProjects: number;
+  StageChangedProjects: number;
+  ClosedProjects: number;
+  VoidedProjects: number;
+  CreatedTasks: number;
+  EditedTasks: number;
+  SubmittedDoneTasks: number;
+  SubmittedBlockedTasks: number;
+  SubmittedRejectedTasks: number;
+  ReviewedApprovedTasks: number;
+  ReviewedReturnedTasks: number;
+  ClosedTasks: number;
+  VoidedTasks: number;
+  CreatedFollowUpTasks: number;
+  AssignedUnclosedTasks: number;
+  AssignedActionRequiredTasks: number;
+  AssignedOverdueTasks: number;
+  PendingReviewByMeTasks: number;
+  WorkLogs: number;
+  Comments: number;
+  TotalActions: number;
+};
+
+export type UserWorkReportDetail = {
+  Time: string;
+  UserEmail: string;
+  UserName: string;
+  Role: string;
+  Type: string;
+  Action: string;
+  ProjectCode: string;
+  ProjectName: string;
+  TaskCode: string;
+  TaskName: string;
+  From: string;
+  To: string;
+  Note: string;
+};
+
+export type UserWorkReport = {
+  startDate: string;
+  endDate: string;
+  generatedAt: string;
+  generatedBy: string;
+  summaries: UserWorkReportSummary[];
+  details: UserWorkReportDetail[];
 };
 
 export type LoginResult = {
