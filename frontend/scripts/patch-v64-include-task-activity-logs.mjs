@@ -76,4 +76,92 @@ if (!app.includes('mergeMutationIntoData(data, await api.createTaskWorkLog')) {
   throw new Error('patch-v64: createTaskWorkLog mutation merge was not applied');
 }
 
+if (!app.includes('const [isRefreshing, setIsRefreshing] = useState(false);')) {
+  app = app.replace(
+    "  const [data, setData] = useState<AppData | null>(() => token ? loadCachedAppData(token) : null);\n",
+    "  const [data, setData] = useState<AppData | null>(() => token ? loadCachedAppData(token) : null);\n  const [isRefreshing, setIsRefreshing] = useState(false);\n"
+  );
+}
+
+if (!app.includes('function applyAppData(next: AppData)')) {
+  app = app.replace(
+    `  async function refresh() {
+    try {
+      setError('');
+      const next = await api.getAppData(token);
+      setData(next);
+      saveCachedAppData(token, next);
+      setUser(next.currentUser);
+      localStorage.setItem(userKey, JSON.stringify(next.currentUser));
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }
+`,
+    `  async function refresh() {
+    try {
+      setIsRefreshing(true);
+      setError('');
+      const next = await api.getAppData(token);
+      applyAppData(next);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
+
+  function applyAppData(next: AppData) {
+    setData(next);
+    if (token) saveCachedAppData(token, next);
+    if (next.currentUser) {
+      setUser(next.currentUser);
+      localStorage.setItem(userKey, JSON.stringify(next.currentUser));
+    }
+  }
+`
+  );
+}
+
+app = app.replaceAll('applyData={setData}', 'applyData={applyAppData}');
+
+app = app.replace(
+  /<button className="light" onClick=\{refresh\}><RefreshCw size=\{16\} \/>[^<]*<\/button>/,
+  `<button className="light" onClick={refresh} disabled={isRefreshing}><RefreshCw size={16} />{isRefreshing ? '同步最新資料中' : '重新整理'}</button>`
+);
+
+if (!app.includes('saveCachedAppData(token, next);\n        return next;')) {
+  app = app.replace(
+    `      setData((current) => {
+        if (!current) return current;
+        const mergedProject = { ...project, ...imageProject };
+        return {
+          ...current,
+          projects: current.projects.map((item) =>
+            String(item.ProjectId) === String(mergedProject.ProjectId) ? mergedProject : item
+          )
+        };
+      });`,
+    `      setData((current) => {
+        if (!current) return current;
+        const mergedProject = { ...project, ...imageProject };
+        const next = {
+          ...current,
+          projects: current.projects.map((item) =>
+            String(item.ProjectId) === String(mergedProject.ProjectId) ? mergedProject : item
+          )
+        };
+        saveCachedAppData(token, next);
+        return next;
+      });`
+  );
+}
+
+if (!app.includes('function applyAppData(next: AppData)')) {
+  throw new Error('patch-v64: applyAppData cache sync was not applied');
+}
+if (app.includes('applyData={setData}')) {
+  throw new Error('patch-v64: stale applyData={setData} remains');
+}
+
 fs.writeFileSync(appPath, app, 'utf8');
