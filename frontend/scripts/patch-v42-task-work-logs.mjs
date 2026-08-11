@@ -88,11 +88,9 @@ if (!app.includes('TaskWorkLog')) {
 if (!app.includes(`| { type: 'workLog'; task: Task }`)) {
   app = replaceRequired(
     app,
+    `  | { type: 'edit'; task: Task }`,
     `  | { type: 'edit'; task: Task }
-  | { type: 'void'; task: Task }`,
-    `  | { type: 'edit'; task: Task }
-  | { type: 'workLog'; task: Task }
-  | { type: 'void'; task: Task }`,
+  | { type: 'workLog'; task: Task }`,
     'ModalState workLog'
   );
 }
