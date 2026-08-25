@@ -111,7 +111,18 @@ export function App() {
   }
 
   if (!data) {
-    return <Shell user={user} view={view} setView={setView} logout={logout}><section className="content">載入中...</section></Shell>;
+    return (
+      <Shell user={user} view={view} setView={setView} logout={logout}>
+        <section className="content">
+          {error ? (
+            <div className="error">
+              <div>{error}</div>
+              <button className="light" onClick={refresh}><RefreshCw size={16} />重新整理</button>
+            </div>
+          ) : '載入中...'}
+        </section>
+      </Shell>
+    );
   }
 
   const notifications = getNotifications(data, user);
