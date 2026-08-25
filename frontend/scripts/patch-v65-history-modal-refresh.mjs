@@ -52,14 +52,25 @@ api = api.replace(
 );
 if (!api.includes("getTaskHistory: (token: string")) {
   api = api.replace(
-    `  getAppData: (token: string, options: Record<string, unknown> = {}) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token, IncludeActivityLogs: false, IncludeImages: false, ...options }),`,
-    `  getAppData: (token: string, options: Record<string, unknown> = {}) => jsonp<AppData>('getAppData', { Token: token, ActorEmail: token, IncludeActivityLogs: false, IncludeImages: false, ...options }),
-  getTaskHistory: (token: string, payload: Record<string, unknown>) => jsonp<TaskHistoryResult>('getTaskHistory', { ...payload, Token: token, ActorEmail: token }),`
+    `  getProjectImage:`,
+    `  getTaskHistory: (token: string, payload: Record<string, unknown>) => jsonp<TaskHistoryResult>('getTaskHistory', { ...payload, Token: token, ActorEmail: token }),
+  getProjectImage:`
   );
+}
+if (!api.includes("getTaskHistory: (token: string")) {
+  throw new Error('patch-v65: getTaskHistory API method was not applied');
 }
 fs.writeFileSync(apiPath, api, 'utf8');
 
 let app = fs.readFileSync(appPath, 'utf8');
+app = app.replace(
+  /import \{([^}]+)\} from 'react';/,
+  (match, names) => {
+    const parts = names.split(',').map((part) => part.trim()).filter(Boolean);
+    if (!parts.includes('useRef')) parts.push('useRef');
+    return `import { ${parts.join(', ')} } from 'react';`;
+  }
+);
 app = app.replace(/import type \{([^}]+)\} from '\.\/types';/, (match, names) => {
   const parts = names.split(',').map((part) => part.trim()).filter(Boolean);
   if (!parts.includes('TaskHistoryResult')) parts.push('TaskHistoryResult');
